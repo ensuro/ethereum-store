@@ -1,0 +1,34 @@
+{
+  "name": "ethereum-store",
+  "version": "1.0.0",
+  "description": "Ethereum store for react redux",
+  "main": "index.js",
+  "scripts": {
+    "prettier": "prettier --write .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ensuro/ethereum-store.git"
+  },
+  "keywords": [
+    "ensuro",
+    "eth",
+    "redux",
+    "store"
+  ],
+  "author": "Ensuro",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ensuro/ethereum-store/issues"
+  },
+  "homepage": "https://github.com/ensuro/ethereum-store#readme",
+  "dependencies": {
+    "ethers": "^5.7.2",
+    "lodash": "^4.17.21",
+    "lodash.clonedeep": "^4.5.0",
+    "redux": "^4.2.1",
+    "redux-saga": "^1.2.3",
+    "reselect": "^4.1.8"
+  }
+}
