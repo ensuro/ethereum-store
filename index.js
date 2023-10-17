@@ -1,5 +1,14 @@
 export { ethereumSaga } from "./saga";
 export { EthereumReducer } from "./reducer";
+export {
+  selectEthCall,
+  selectEthCallTimestamp,
+  selectEthCallTimestampByKey,
+  selectEthCallState,
+  selectEthCallMultiple,
+  selectLastTransact,
+  selectBiggerSign,
+} from "./selectors";
 
 // Helpers
 let getEncodedCallFn;
