@@ -1,4 +1,5 @@
 import _ from "lodash";
+import Web3 from "web3";
 import { ethereum, gas } from "./config";
 import { call, put, takeEvery, delay, select } from "redux-saga/effects";
 
@@ -19,6 +20,12 @@ import {
   ETH_EIP_712_SIGN,
   ETH_EIP_712_SIGN_FAILED,
   ETH_EIP_712_SIGN_PROCESSED,
+  ETH_SIWE_SIGN,
+  ETH_SIWE_SIGN_FAILED,
+  ETH_SIWE_SIGN_PROCESSED,
+  ETH_PLAIN_SIGN,
+  ETH_PLAIN_SIGN_PROCESSED,
+  ETH_PLAIN_SIGN_FAILED,
 } from "./actionTypes";
 import { selectEthCallTimestampByKey } from "./selectors";
 import {
@@ -39,6 +46,12 @@ async function signMessageTyped(userState, domain, types, value) {
   const provider = new ethers.providers.Web3Provider(selectProviderFn(userState), "any");
   const signer = provider.getSigner();
   const signatureHash = await signer._signTypedData(domain, types, value);
+  return signatureHash;
+}
+
+async function signMessage(userState, address, message) {
+  const web3 = new Web3(selectProviderFn(userState));
+  const signatureHash = await web3.eth.personal.sign(message, address);
   return signatureHash;
 }
 
@@ -181,7 +194,7 @@ export function* makeEthComponentCalls() {
   yield put({ type: SET_TIMESTAMP_TO_REFRESH, timestamp: 0 });
 }
 
-export function* makeEthSign({ domain, types, value }) {
+export function* makeEthEipSign({ domain, types, value }) {
   const userState = yield select((state) => state.UserReducer);
   const addr = ethers.utils.getAddress(userState.address);
   try {
@@ -205,13 +218,51 @@ export function* makeEthSign({ domain, types, value }) {
   }
 }
 
+export function* makeEthSiweSign({ message, userAddress, email, country, occupation, whitelist }) {
+  const userState = yield select((state) => state.UserReducer);
+  const addr = ethers.utils.getAddress(userAddress);
+  try {
+    const signatureHash = yield call(signMessage, userState, addr, message);
+    yield put({
+      type: ETH_SIWE_SIGN_PROCESSED,
+      key: addr,
+      signature: signatureHash,
+      message: message,
+      email: email,
+      country: country,
+      occupation: occupation,
+      whitelist: whitelist,
+    });
+  } catch (error) {
+    yield put({ type: ETH_SIWE_SIGN_FAILED, key: addr, payload: error.message });
+  }
+}
+
+export function* makeSign({ message, userAddress }) {
+  const userState = yield select((state) => state.UserReducer);
+  const addr = ethers.utils.getAddress(userAddress);
+  try {
+    const signatureHash = yield call(signMessage, userState, addr, message);
+    yield put({
+      type: ETH_PLAIN_SIGN_PROCESSED,
+      key: addr,
+      signature: signatureHash,
+      message: message,
+    });
+  } catch (error) {
+    yield put({ type: ETH_PLAIN_SIGN_FAILED, key: addr, payload: error.message });
+  }
+}
+
 export function* ethereumSaga() {
-  yield takeEvery(ETH_EIP_712_SIGN, makeEthSign);
   yield takeEvery(ETH_CALL, makeEthCall);
   yield takeEvery(ETH_ADD_SUBSCRIPTION, makeEthComponentCalls);
   yield takeEvery(ETH_DISPATCH_CLOCK, refreshAllSubscriptionsCalls);
   yield takeEvery(ETH_TRANSACT, makeEthTransact);
   yield takeEvery(ETH_TRANSACT_QUEUED, listenTransact);
+  yield takeEvery(ETH_PLAIN_SIGN, makeSign);
+  yield takeEvery(ETH_SIWE_SIGN, makeEthSiweSign);
+  yield takeEvery(ETH_EIP_712_SIGN, makeEthEipSign);
 }
 
 export default ethereumSaga;

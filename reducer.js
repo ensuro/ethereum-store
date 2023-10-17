@@ -16,6 +16,13 @@ import {
   ETH_EIP_712_SIGN,
   ETH_EIP_712_SIGN_FAILED,
   ETH_EIP_712_SIGN_PROCESSED,
+  ETH_SIWE_SIGN,
+  ETH_SIWE_SIGN_FAILED,
+  ETH_SIWE_SIGN_PROCESSED,
+  SET_ETH_SIWE_SIGN,
+  ETH_PLAIN_SIGN,
+  ETH_PLAIN_SIGN_PROCESSED,
+  ETH_PLAIN_SIGN_FAILED,
 } from "./actionTypes";
 
 const { ethers } = require("ethers");
@@ -42,6 +49,8 @@ const INIT_STATE = {
   timestamp: 0,
   transacts: [],
   signs: {},
+  siweSigns: {},
+  eipSigns: {},
 };
 
 export const EthereumReducer = (state = INIT_STATE, action) => {
@@ -148,12 +157,51 @@ export const EthereumReducer = (state = INIT_STATE, action) => {
       state = { ...state, transacts: transactExpired };
       break;
 
+    case ETH_SIWE_SIGN:
+      state = {
+        ...state,
+        siweSigns: {
+          ...state.siweSigns,
+          [action.userAddress]: { state: "PENDING" },
+        },
+      };
+      break;
+
+    case SET_ETH_SIWE_SIGN:
+    case ETH_SIWE_SIGN_PROCESSED:
+      state = {
+        ...state,
+        siweSigns: {
+          ...state.siweSigns,
+          [action.key]: {
+            state: "SIGNED",
+            signature: action.signature,
+            message: action.message,
+            email: action.email,
+            country: action.country,
+            occupation: action.occupation,
+            whitelist: action.whitelist,
+          },
+        },
+      };
+      break;
+
+    case ETH_SIWE_SIGN_FAILED:
+      state = {
+        ...state,
+        siweSigns: {
+          ...state.siweSigns,
+          [action.key]: { ...state.siweSigns[action.key], state: "ERROR", error: action.payload },
+        },
+      };
+      break;
+
     case ETH_EIP_712_SIGN:
       const eipKey = ethers.utils._TypedDataEncoder.encode(action.domain, action.types, action.value);
       state = {
         ...state,
-        signs: {
-          ...state.signs,
+        eipSigns: {
+          ...state.eipSigns,
           [eipKey]: { state: "PENDING" },
         },
       };
@@ -162,8 +210,8 @@ export const EthereumReducer = (state = INIT_STATE, action) => {
     case ETH_EIP_712_SIGN_PROCESSED:
       state = {
         ...state,
-        signs: {
-          ...state.signs,
+        eipSigns: {
+          ...state.eipSigns,
           [action.key]: {
             state: "SIGNED",
             userAddress: action.userAddress,
@@ -179,14 +227,48 @@ export const EthereumReducer = (state = INIT_STATE, action) => {
     case ETH_EIP_712_SIGN_FAILED:
       state = {
         ...state,
-        signs: {
-          ...state.signs,
+        eipSigns: {
+          ...state.eipSigns,
           [action.key]: {
-            ...state.signs[action.key],
+            ...state.eipSigns[action.key],
             state: "ERROR",
             error: action.payload,
             userAddress: action.userAddress,
           },
+        },
+      };
+      break;
+
+    case ETH_PLAIN_SIGN:
+      state = {
+        ...state,
+        signs: {
+          ...state.signs,
+          [action.userAddress]: { state: "PENDING" },
+        },
+      };
+      break;
+
+    case ETH_PLAIN_SIGN_PROCESSED:
+      state = {
+        ...state,
+        signs: {
+          ...state.signs,
+          [action.key]: {
+            state: "SIGNED",
+            signature: action.signature,
+            message: action.message,
+          },
+        },
+      };
+      break;
+
+    case ETH_PLAIN_SIGN_FAILED:
+      state = {
+        ...state,
+        signs: {
+          ...state.signs,
+          [action.key]: { ...state.signs[action.key], state: "ERROR", error: action.payload },
         },
       };
       break;

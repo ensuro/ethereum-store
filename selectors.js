@@ -8,6 +8,12 @@ const getCalls = (state) => state.calls;
 const getCallMetadata = (state) => state.call_metadata;
 const getTransacts = (state) => state.transacts;
 const getSigns = (state) => state.signs;
+const getSiweSigns = (state) => state.siweSigns;
+const getEIPSigns = (state) => state.eipSigns;
+
+const getSignKey = (__, address) => {
+  return address;
+};
 
 const getCallKey = (__, address, abiName, method, ...args) =>
   address + "_" + getEncodedCallFn(address, abiName, method, args);
@@ -45,15 +51,24 @@ export const selectEthCallMultiple = createSelector([getCalls, getCallKeys], (ca
 
 export const selectLastTransact = createSelector([getTransacts], (transacts) => transacts[transacts.length - 1]);
 
-export const selectBiggerSign = createSelector([getSigns, (__, addr, nonce) => ({ addr, nonce })], (signs, params) => {
-  const userAddr = ethers.utils.getAddress(params.addr);
-  const nonce = params.nonce;
-  const filteredSigns = Object.keys(signs).filter((sign) => {
-    return signs[sign].state === "SIGNED" && userAddr === signs[sign].userAddress && signs[sign].value.nonce.eq(nonce);
-  });
-  const sortedSigns = filteredSigns.sort((s1, s2) => {
-    return signs[s2].value.value - signs[s1].value.value;
-  });
+export const selectSign = createSelector([getSigns, getSignKey], (signs, signKey) => signs[signKey]);
 
-  return signs[sortedSigns[0]];
-});
+export const selectEthSiweSign = createSelector([getSiweSigns, getSignKey], (signs, ethSignKey) => signs[ethSignKey]);
+
+export const selectBiggerSign = createSelector(
+  [getEIPSigns, (__, addr, nonce) => ({ addr, nonce })],
+  (signs, params) => {
+    const userAddr = ethers.utils.getAddress(params.addr);
+    const nonce = params.nonce;
+    const filteredSigns = Object.keys(signs).filter((sign) => {
+      return (
+        signs[sign].state === "SIGNED" && userAddr === signs[sign].userAddress && signs[sign].value.nonce.eq(nonce)
+      );
+    });
+    const sortedSigns = filteredSigns.sort((s1, s2) => {
+      return signs[s2].value.value - signs[s1].value.value;
+    });
+
+    return signs[sortedSigns[0]];
+  }
+);

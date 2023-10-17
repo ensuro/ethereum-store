@@ -54,7 +54,31 @@ export const ETH_EIP_712_SIGN_FAILED = "ETH_EIP_712_SIGN_FAILED";
 
 /*
  * Sample actions
- * {type: ETH_EIP_712_SIGN, key: userAddress + "_" + amount,  state: "PENDING" }
- * {type: ETH_EIP_712_SIGN_PROCESSED, key: userAddress + "_" + amount, signature: "0x1234...", userAddress: "0x...", spender: pool.address, amount: amount, deadline: 1234, nonce: 1}
- * {type: ETH_EIP_712_SIGN_FAILED, key: userAddress + "_" + amount, payload: error.message  }
+ * {type: ETH_EIP_712_SIGN, key: encode(domain, types, value),  state: "PENDING" }
+ * {type: ETH_EIP_712_SIGN_PROCESSED, key: encode(domain, types, value), signature: "0x1234...", userAddress: "0x...", spender: pool.address, amount: amount, deadline: 1234, nonce: 1}
+ * {type: ETH_EIP_712_SIGN_FAILED, key: encode(domain, types, value), payload: error.message  }
+ */
+
+export const ETH_SIWE_SIGN = "ETH_SIWE_SIGN";
+export const ETH_SIWE_SIGN_PROCESSED = "ETH_SIWE_SIGN_PROCESSED";
+export const ETH_SIWE_SIGN_FAILED = "ETH_SIWE_SIGN_FAILED";
+export const SET_ETH_SIWE_SIGN = "SET_ETH_SIWE_SIGN";
+
+/*
+ * Sample actions
+ * {type: ETH_SIWE_SIGN, message: "message to sign", userAddress: "0x..", email: "email@ensuro.co", country: "AR", occupation: "Developer"}
+ * {type: ETH_SIWE_SIGN_PROCESSED, key: userAddress, signature: "0x1234...", message: "message to sign"}
+ * {type: ETH_SIWE_SIGN_FAILED, key: userAddress, payload: error.message  }
+ * {type: SET_ETH_SIWE_SIGN, key: userAddress, signature: "0x1234...", message: "message to sign"}
+ */
+
+export const ETH_PLAIN_SIGN = "ETH_PLAIN_SIGN";
+export const ETH_PLAIN_SIGN_PROCESSED = "ETH_PLAIN_SIGN_PROCESSED";
+export const ETH_PLAIN_SIGN_FAILED = "ETH_PLAIN_SIGN_FAILED";
+
+/*
+ * Sample actions
+ * {type: ETH_PLAIN_SIGN, message: "Welcome to Quadrata! By signing, you agree to the Terms of Service.", userAddress: "0x.."}
+ * {type: ETH_PLAIN_SIGN_PROCESSED, key: userAddress, signature: "0x1234...", message: "message to sign"}
+ * {type: ETH_PLAIN_SIGN_FAILED, key: userAddress, payload: error.message  }
  */

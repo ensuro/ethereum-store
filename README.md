@@ -117,16 +117,27 @@ export const ETH_EIP_712_SIGN_FAILED = "ETH_EIP_712_SIGN_FAILED";
  * {type: ETH_EIP_712_SIGN_FAILED, key: encode(domain, types, value), payload: error.message  }
  */
 
-export const ETH_SIGN = "ETH_SIGN";
-export const ETH_SIGN_PROCESSED = "ETH_SIGN_PROCESSED";
-export const ETH_SIGN_FAILED = "ETH_SIGN_FAILED";
-export const SET_ETH_SIGN = "SET_ETH_SIGN";
+export const ETH_SIWE_SIGN = "ETH_SIWE_SIGN";
+export const ETH_SIWE_SIGN_PROCESSED = "ETH_SIWE_SIGN_PROCESSED";
+export const ETH_SIWE_SIGN_FAILED = "ETH_SIWE_SIGN_FAILED";
+export const SET_ETH_SIWE_SIGN = "SET_ETH_SIWE_SIGN";
 
 /*
  * Sample actions
- * {type: ETH_SIGN, message: "message to sign", userAddress: "0x..", email: "email@ensuro.co", country: "AR", occupation: "Developer"}
- * {type: ETH_SIGN_PROCESSED, key: userAddress, signature: "0x1234...", message: "message to sign"}
- * {type: ETH_SIGN_FAILED, key: userAddress, payload: error.message  }
- * {type: SET_ETH_SIGN, key: userAddress, signature: "0x1234...", message: "message to sign"}
+ * {type: ETH_SIWE_SIGN, message: "message to sign", userAddress: "0x..", email: "email@ensuro.co", country: "AR", occupation: "Developer"}
+ * {type: ETH_SIWE_SIGN_PROCESSED, key: userAddress, signature: "0x1234...", message: "message to sign"}
+ * {type: ETH_SIWE_SIGN_FAILED, key: userAddress, payload: error.message  }
+ * {type: SET_ETH_SIWE_SIGN, key: userAddress, signature: "0x1234...", message: "message to sign"}
+ */
+
+export const ETH_PLAIN_SIGN = "ETH_PLAIN_SIGN";
+export const ETH_PLAIN_SIGN_PROCESSED = "ETH_PLAIN_SIGN_PROCESSED";
+export const ETH_PLAIN_SIGN_FAILED = "ETH_PLAIN_SIGN_FAILED";
+
+/*
+ * Sample actions
+ * {type: ETH_PLAIN_SIGN, message: "Welcome to Quadrata! By signing, you agree to the Terms of Service.", userAddress: "0x.."}
+ * {type: ETH_PLAIN_SIGN_PROCESSED, key: userAddress, signature: "0x1234...", message: "message to sign"}
+ * {type: ETH_PLAIN_SIGN_FAILED, key: userAddress, payload: error.message  }
  */
 ```
