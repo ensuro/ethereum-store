@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { chain, ethereum, gas } from "./config";
+import { ethereum, gas } from "./config";
 import { call, put, takeEvery, delay, select } from "redux-saga/effects";
 
 // Ethereum Redux States
@@ -28,9 +28,9 @@ import {
   getFormatterFn,
   getSignerContractFn,
   getTxReceiptStatusFn,
-  // selectUserAddressFn,
   selectChainIdFn,
   selectProviderFn,
+  envChain,
 } from ".";
 
 const { ethers } = require("ethers");
@@ -112,7 +112,7 @@ export function* makeEthTransact({ address, abi, method, args }) {
   const userState = yield select((state) => state.UserReducer);
   const id = state.transacts.length - 1;
   try {
-    if (selectChainIdFn(userState) === chain.id) {
+    if (selectChainIdFn(userState) === envChain.id) {
       const response = yield call(_.partial(ethSignerCall, address, abi, method, args, userState));
       yield put({ type: ETH_TRANSACT_QUEUED, id: id, txHash: response.hash });
     }
