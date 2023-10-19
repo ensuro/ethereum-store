@@ -8,6 +8,8 @@ export {
   selectEthCallMultiple,
   selectLastTransact,
   selectBiggerSign,
+  selectSign,
+  selectEthSiweSign,
 } from "./selectors";
 
 // Helpers

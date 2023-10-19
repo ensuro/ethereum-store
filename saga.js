@@ -1,5 +1,4 @@
 import _ from "lodash";
-import Web3 from "web3";
 import { ethereum, gas } from "./config";
 import { call, put, takeEvery, delay, select } from "redux-saga/effects";
 
@@ -50,8 +49,9 @@ async function signMessageTyped(userState, domain, types, value) {
 }
 
 async function signMessage(userState, address, message) {
-  const web3 = new Web3(selectProviderFn(userState));
-  const signatureHash = await web3.eth.personal.sign(message, address);
+  const provider = new ethers.providers.Web3Provider(selectProviderFn(userState), "any");
+  const signer = provider.getSigner();
+  const signatureHash = await signer.signMessage(message);
   return signatureHash;
 }
 
