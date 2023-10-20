@@ -1,4 +1,4 @@
-import { getEncodedCallFn } from ".";
+import { getEncodedCallFn } from "..";
 
 import {
   ETH_CALL,

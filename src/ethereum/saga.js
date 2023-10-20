@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { ethereum, gas } from "./config";
+import { ethereum, gas } from "../config";
 import { call, put, takeEvery, delay, select } from "redux-saga/effects";
 
 // Ethereum Redux States
@@ -37,7 +37,7 @@ import {
   selectChainIdFn,
   selectProviderFn,
   envChain,
-} from ".";
+} from "../..";
 
 const { ethers } = require("ethers");
 
@@ -76,6 +76,7 @@ async function ethCall(address, abi, method, args) {
 }
 
 async function ethSignerCall(address, abi, method, args, userState) {
+  console.log("ENTRA ACA", selectProviderFn(userState));
   let provider = new ethers.providers.Web3Provider(selectProviderFn(userState), "any");
   let contract = getSignerContractFn(address, abi, provider);
   const estimatedGas = await contract["estimateGas"][method](...args).then((gas) => {
