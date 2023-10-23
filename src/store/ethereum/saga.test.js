@@ -5,7 +5,7 @@ import store from "../index.js";
 import * as mock_helper from "../../helpers/mock_helper";
 import * as contractRegistry from "../../helpers/contractRegistry";
 
-import { initializeEthereumStore, selectEthCall } from "../../package-index";
+import { initializeEthereumStore, selectEthCall, selectEthCallMultiple } from "../../package-index";
 import { ethereum } from "../../config";
 
 const sinon = require("sinon");
@@ -143,10 +143,14 @@ test("ETH_ADD_SUBSCRIPTION and ETH_DISPATCH_CLOCK with two ethCall", async () =>
   });
   sinon.assert.calledOnce(fakeTotalSupply);
   sinon.assert.calledOnce(fakeName);
-  assert.ok(
-    selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply").eq(Big(12.345))
-  );
-  assert(selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "name") === "Peso");
+
+  const [totalSupply, name] = selectEthCallMultiple(store.getState().EthereumReducer, [
+    { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
+    { address: currencyAddress, abi: "ERC20Permit", method: "name", args: [] },
+  ]);
+
+  assert.ok(totalSupply.value.eq(Big(12.345)));
+  assert(name.value === "Peso");
 });
 
 test("Only ONE call with TWO subscritions to the SAME METHOD", async () => {
