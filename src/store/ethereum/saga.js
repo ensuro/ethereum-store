@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { ethereum, gas } from "../config";
+import { ethereum, gas } from "../../config";
 import { call, put, takeEvery, delay, select } from "redux-saga/effects";
 
 // Ethereum Redux States
@@ -37,20 +37,21 @@ import {
   selectChainIdFn,
   selectProviderFn,
   envChain,
-} from "../..";
+  selectUserAddressFn,
+} from "../../package-index";
 
 const { ethers } = require("ethers");
 
 async function signMessageTyped(userState, domain, types, value) {
   const provider = new ethers.providers.Web3Provider(selectProviderFn(userState), "any");
-  const signer = provider.getSigner();
+  const signer = await provider.getSigner();
   const signatureHash = await signer._signTypedData(domain, types, value);
   return signatureHash;
 }
 
 async function signMessage(userState, address, message) {
   const provider = new ethers.providers.Web3Provider(selectProviderFn(userState), "any");
-  const signer = provider.getSigner();
+  const signer = await provider.getSigner();
   const signatureHash = await signer.signMessage(message);
   return signatureHash;
 }
@@ -76,7 +77,6 @@ async function ethCall(address, abi, method, args) {
 }
 
 async function ethSignerCall(address, abi, method, args, userState) {
-  console.log("ENTRA ACA", selectProviderFn(userState));
   let provider = new ethers.providers.Web3Provider(selectProviderFn(userState), "any");
   let contract = getSignerContractFn(address, abi, provider);
   const estimatedGas = await contract["estimateGas"][method](...args).then((gas) => {
@@ -197,7 +197,7 @@ export function* makeEthComponentCalls() {
 
 export function* makeEthEipSign({ domain, types, value }) {
   const userState = yield select((state) => state.UserReducer);
-  const addr = ethers.utils.getAddress(userState.address);
+  const addr = selectUserAddressFn(userState);
   try {
     const signatureHash = yield call(signMessageTyped, userState, domain, types, value);
     yield put({

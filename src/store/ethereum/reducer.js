@@ -1,4 +1,4 @@
-import { getEncodedCallFn } from "..";
+import { getEncodedCallFn } from "../../package-index";
 
 import {
   ETH_CALL,
@@ -53,7 +53,7 @@ const INIT_STATE = {
   eipSigns: {},
 };
 
-export const EthereumReducer = (state = INIT_STATE, action) => {
+const EthereumReducer = (state = INIT_STATE, action) => {
   switch (action.type) {
     case ETH_CALL:
       let key = action.address + "_" + getEncodedCallFn(action.address, action.abi, action.method, action.args);
@@ -279,3 +279,5 @@ export const EthereumReducer = (state = INIT_STATE, action) => {
   }
   return state;
 };
+
+export default EthereumReducer;

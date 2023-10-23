@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { createSelector } from "reselect";
-import { getEncodedCallFn } from "../..";
+import { getEncodedCallFn } from "../../package-index";
 
 const { ethers } = require("ethers");
 

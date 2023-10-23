@@ -1,68 +1,20 @@
-export { ethereumSaga } from "./ethereum/saga";
-export { EthereumReducer } from "./ethereum/reducer";
-export {
-  selectEthCall,
-  selectEthCallTimestamp,
-  selectEthCallTimestampByKey,
-  selectEthCallState,
-  selectEthCallMultiple,
-  selectLastTransact,
-  selectBiggerSign,
-  selectSign,
-  selectEthSiweSign,
-} from "./ethereum/selectors";
+import React from "react";
+import App from "./App";
+import { BrowserRouter } from "react-router-dom";
+import { createRoot } from "react-dom/client";
+import { Provider } from "react-redux";
+import { Buffer } from "buffer";
+import store from "./store";
 
-// Helpers
-let getEncodedCallFn;
-let getContractFn;
-let getAbiNameFn;
-let getFormatterFn;
-let getSignerContractFn;
-let getTxReceiptStatusFn;
+const app = (
+  <Provider store={store}>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </Provider>
+);
 
-// User
-let selectUserAddressFn;
-let selectChainIdFn;
-let selectProviderFn;
-
-// Chain
-let envChain;
-
-export function initializeEthereumStore(options) {
-  const {
-    getEncodedCall,
-    getContract,
-    getAbiName,
-    getFormatter,
-    getSignerContract,
-    getTxReceiptStatus,
-    selectUserAddress,
-    selectChainId,
-    selectProvider,
-    chain,
-  } = options;
-
-  getEncodedCallFn = getEncodedCall;
-  getContractFn = getContract;
-  getAbiNameFn = getAbiName;
-  getFormatterFn = getFormatter;
-  getSignerContractFn = getSignerContract;
-  getTxReceiptStatusFn = getTxReceiptStatus;
-  selectUserAddressFn = selectUserAddress;
-  selectChainIdFn = selectChainId;
-  selectProviderFn = selectProvider;
-  envChain = chain;
-}
-
-export {
-  getEncodedCallFn,
-  getContractFn,
-  getAbiNameFn,
-  getFormatterFn,
-  getSignerContractFn,
-  getTxReceiptStatusFn,
-  selectUserAddressFn,
-  selectChainIdFn,
-  selectProviderFn,
-  envChain,
-};
+window.Buffer = window.Buffer || Buffer;
+const rootElement = document.getElementById("root");
+const root = createRoot(rootElement);
+root.render(app);
