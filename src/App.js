@@ -1,7 +1,9 @@
-import logo from "./logo.svg";
-import "./App.css";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+import { Switch, BrowserRouter as Router } from "react-router-dom";
 import { useDispatch } from "react-redux";
+// Import Routes all
+import { userRoutes } from "./routes/allRoutes";
+import Middleware from "./routes/middleware/Middleware";
 
 function App() {
   let dispatch = useDispatch();
@@ -14,17 +16,15 @@ function App() {
   }, [dispatch]);
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a className="App-link" href="https://reactjs.org" target="_blank" rel="noopener noreferrer">
-          Learn React
-        </a>
-      </header>
-    </div>
+    <React.Fragment>
+      <Router>
+        <Switch>
+          {userRoutes.map((route, idx) => (
+            <Middleware path={route.path} component={route.component} key={idx} exact />
+          ))}
+        </Switch>
+      </Router>
+    </React.Fragment>
   );
 }
 

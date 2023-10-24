@@ -23,7 +23,8 @@ initializeEthereumStore({
   // just for testing
   chain: {
     id: 80001,
-    rpc: "https://matic-mumbai.chainstacklabs.com/",
+    rpc: "https://rpc.ankr.com/polygon_mumbai",
+    network: "maticmum",
   },
 });
 

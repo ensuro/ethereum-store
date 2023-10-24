@@ -863,8 +863,6 @@ describe("All the tests with provider REJECTED Mock", () => {
 
     await new Promise((r) => setTimeout(r, 0));
 
-    console.log("STATAE: ", store.getState().EthereumReducer);
-
     const sign = selectSign(store.getState().EthereumReducer, [userAddr]);
     assert.deepStrictEqual(sign.state, "ERROR");
     assert.deepStrictEqual(sign.error, "Error signing message");

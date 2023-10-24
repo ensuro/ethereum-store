@@ -1,7 +1,7 @@
 /* This file is used only for testing purposes. */
 const { ethers } = require("ethers");
 
-const roProvider = new ethers.providers.JsonRpcProvider("https://matic-mumbai.chainstacklabs.com");
+const roProvider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/polygon_mumbai");
 
 const abis = {}; // Mapping (abiName => abi)
 const formatters = {}; // Mapping (abiName => method => outputFormatterFunction)
