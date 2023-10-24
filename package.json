@@ -36,6 +36,11 @@
       "react-app/jest"
     ]
   },
+  "files": [
+    "src/store/ethereum/*",
+    "src/config.js",
+    "src/package-index.js"
+  ],
   "browserslist": {
     "production": [
       "chrome >= 67",

@@ -54,3 +54,20 @@ export const mockProviderFn = () => {
   };
   return ret;
 };
+
+export const mockProviderRejectsFn = () => {
+  const ret = function () {
+    return ret._defaultProvider;
+  };
+
+  ret._defaultProvider = {
+    getSigner: sinon.fake.resolves({
+      signMessage: sinon.fake.rejects("Error signing message"),
+      _signTypedData: sinon.fake.rejects("Error signing typed message"),
+    }),
+  }; // Default provider
+  ret.default = (provider) => {
+    ret._defaultProvider = provider;
+  };
+  return ret;
+};
