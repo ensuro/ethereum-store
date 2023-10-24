@@ -5,7 +5,15 @@ import store from "../index.js";
 import * as mock_helper from "../../helpers/mock_helper";
 import * as contractRegistry from "../../helpers/contractRegistry";
 
-import { initializeEthereumStore, selectEthCall, selectEthCallMultiple } from "../../package-index";
+import { initializeEthereumStore } from "../../package-index";
+import {
+  selectBiggerSign,
+  selectEthCall,
+  selectEthCallMultiple,
+  selectEthCallState,
+  selectEthCallTimestampByKey,
+  selectSign,
+} from "./selectors";
 import { ethereum } from "../../config";
 
 const sinon = require("sinon");
@@ -196,6 +204,11 @@ test("Only ONE call with TWO subscritions to the SAME METHOD", async () => {
   assert.ok(
     selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply").eq(Big(12.345))
   );
+
+  await store.dispatch({ type: "ETH_REMOVE_SUBSCRIPTION", key: "secondComponent" });
+  assert.deepStrictEqual(store.getState().EthereumReducer.subscriptions, {
+    totalSupplyComponent: [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }],
+  });
 });
 
 test("ETH_CALL with simple method", async () => {
@@ -520,6 +533,46 @@ test("ETH_TRANSACT reverted", async () => {
   assert.deepStrictEqual(store.getState().EthereumReducer.transacts[id].txHash, txHash);
 });
 
+test("ETH_CALL method with timestamp", async () => {
+  fakeUsdcContract.totalSupply = sinon.fake.resolves(ethers.BigNumber.from(12.345e6));
+  assert.strictEqual(ethers.Contract.callCount, 1);
+  await store.dispatch({
+    type: "ETH_CALL",
+    address: currencyAddress,
+    abi: "ERC20Permit",
+    method: "totalSupply",
+  });
+  assert.strictEqual(ethers.Contract.callCount, 1);
+  const call_key = currencyAddress + "_0x18160ddd"; // "18160ddd" == kekac256("totalSupply()")
+  await new Promise((r) => setTimeout(r, 1000));
+
+  const prevTimestamp = selectEthCallTimestampByKey(store.getState().EthereumReducer, call_key);
+  await store.dispatch({
+    type: "ETH_CALL",
+    address: currencyAddress,
+    abi: "ERC20Permit",
+    method: "totalSupply",
+  });
+  await new Promise((r) => setTimeout(r, 1000));
+  let newTimestamp = selectEthCallTimestampByKey(store.getState().EthereumReducer, call_key);
+  assert.strictEqual(prevTimestamp, newTimestamp);
+
+  await store.dispatch({
+    type: "ETH_CALL",
+    address: currencyAddress,
+    abi: "ERC20Permit",
+    method: "totalSupply",
+    maxAge: 100,
+  });
+  await new Promise((r) => setTimeout(r, 1000));
+
+  newTimestamp = selectEthCallTimestampByKey(store.getState().EthereumReducer, call_key);
+
+  let state = selectEthCallState(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply");
+  assert.strictEqual(state, "LOADED");
+  assert.notStrictEqual(prevTimestamp, newTimestamp);
+});
+
 test("ETH_PLAIN_SIGN with message", async () => {
   const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
   await store.dispatch({
@@ -532,9 +585,10 @@ test("ETH_PLAIN_SIGN with message", async () => {
 
   await new Promise((r) => setTimeout(r, 0));
 
-  assert.deepStrictEqual(store.getState().EthereumReducer.signs[userAddr].state, "SIGNED");
-  assert.deepStrictEqual(store.getState().EthereumReducer.signs[userAddr].signature, "0x1234567890");
-  assert.deepStrictEqual(store.getState().EthereumReducer.signs[userAddr].message, "Simple example of plain text");
+  const sign = selectSign(store.getState().EthereumReducer, [userAddr]);
+  assert.deepStrictEqual(sign.state, "SIGNED");
+  assert.deepStrictEqual(sign.signature, "0x1234567890");
+  assert.deepStrictEqual(sign.message, "Simple example of plain text");
 });
 
 test("Signed eip712 message ETH_EIP_712_SIGN", async () => {
@@ -583,4 +637,84 @@ test("Signed eip712 message ETH_EIP_712_SIGN", async () => {
   assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].state, "SIGNED");
   assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].signature, "0x0987654321");
   assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].value, value);
+});
+
+test("Signed two eip712 message ETH_EIP_712_SIGN and get the bigger sign", async () => {
+  const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
+  const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
+  const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
+  fakeUsdcContract.nonces = sinon.fake.resolves(BigNumber.from(2));
+
+  const usdcDomain = {
+    name: "USDC",
+    version: "1",
+    chainId: 8001,
+    verifyingContract: currencyAddress,
+  };
+
+  const types = {
+    Permit: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+      { name: "value", type: "uint256" },
+      { name: "nonce", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+    ],
+  };
+
+  let value = {
+    owner: ethers.utils.getAddress(userAddr),
+    spender: ethers.utils.getAddress(spenderAddr),
+    value: ethers.BigNumber.from(100e6),
+    nonce: await fakeUsdcContract.nonces(userAddr),
+    deadline: deadline,
+  };
+
+  await store.dispatch({
+    type: "ETH_EIP_712_SIGN",
+    domain: usdcDomain,
+    types: types,
+    value: value,
+  });
+
+  const key = ethers.utils._TypedDataEncoder.encode(usdcDomain, types, value);
+  assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].state, "PENDING");
+
+  await new Promise((r) => setTimeout(r, 0));
+
+  assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].state, "SIGNED");
+  assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].signature, "0x0987654321");
+  assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].value, value);
+
+  value = {
+    owner: ethers.utils.getAddress(userAddr),
+    spender: ethers.utils.getAddress(spenderAddr),
+    value: ethers.BigNumber.from(200e6),
+    nonce: await fakeUsdcContract.nonces(userAddr),
+    deadline: deadline,
+  };
+
+  await store.dispatch({
+    type: "ETH_EIP_712_SIGN",
+    domain: usdcDomain,
+    types: types,
+    value: value,
+  });
+
+  const key2 = ethers.utils._TypedDataEncoder.encode(usdcDomain, types, value);
+  assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key2].state, "PENDING");
+
+  await new Promise((r) => setTimeout(r, 0));
+
+  assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key2].state, "SIGNED");
+  assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key2].signature, "0x0987654321");
+  assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key2].value, value);
+
+  let biggerSign = selectBiggerSign(
+    store.getState().EthereumReducer,
+    userAddr,
+    await fakeUsdcContract.nonces(userAddr)
+  );
+
+  assert.deepStrictEqual(biggerSign.value.value.toString(), "200000000"); // second signature is bigger
 });
