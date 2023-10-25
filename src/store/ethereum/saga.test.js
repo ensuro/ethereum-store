@@ -28,7 +28,7 @@ const currencyAddress = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"; // Polygon
 const BNToDecimal = (number, decimals) => {
   return Big(number).div(10 ** decimals);
 };
-contractRegistry.registerABI("ERC20Permit", require("@openzeppelin/contracts/build/contracts/ERC20Permit.json").abi);
+contractRegistry.registerABI("ERC20Permit", require("../../abis/ERC20Permit.json").abi);
 contractRegistry.registerContract(currencyAddress, "ERC20Permit");
 contractRegistry.registerFormatter("ERC20Permit", "totalSupply", _.partial(BNToDecimal, _, 6));
 contractRegistry.registerFormatter("ERC20Permit", "balanceOf", _.partial(BNToDecimal, _, 6));
