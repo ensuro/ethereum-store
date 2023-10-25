@@ -5,7 +5,7 @@ import { Container } from "reactstrap";
 import { Button } from "react-bootstrap";
 import { useDispatch } from "react-redux";
 import { connect } from "react-redux";
-import { selectEthCallMultiple } from "../../package-index";
+import { selectEthCallMultiple } from "../../store/ethereum/selectors";
 import SubsManager from "./subsManager";
 
 const componentEthCalls = function () {

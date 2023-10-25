@@ -4,7 +4,7 @@ import { Container } from "reactstrap";
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { useDispatch } from "react-redux";
 import { connect } from "react-redux";
-import { selectEthCall } from "../../package-index";
+import { selectEthCall } from "../../store/ethereum/selectors";
 import { map } from "lodash";
 
 const DynamicDashboard = ({ state, subscriptions }) => {

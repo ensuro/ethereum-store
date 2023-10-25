@@ -62,7 +62,9 @@ export const selectBiggerSign = createSelector(
     const nonce = params.nonce;
     const filteredSigns = Object.keys(signs).filter((sign) => {
       return (
-        signs[sign].state === "SIGNED" && userAddr === signs[sign].userAddress && signs[sign].value.nonce.eq(nonce)
+        signs[sign].state === "SIGNED" &&
+        userAddr === ethers.utils.getAddress(signs[sign].userAddress) &&
+        signs[sign].value.nonce.eq(nonce)
       );
     });
     const sortedSigns = filteredSigns.sort((s1, s2) => {

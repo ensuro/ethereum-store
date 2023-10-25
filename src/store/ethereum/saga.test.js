@@ -5,7 +5,7 @@ import store from "../index.js";
 import * as mock_helper from "../../helpers/mock_helper";
 import * as contractRegistry from "../../helpers/contractRegistry";
 
-import { initializeEthereumStore, selectEthSiweSign } from "../../package-index";
+import { initializeEthereumStore } from "../../package-index";
 import {
   selectBiggerSign,
   selectEthCall,
@@ -13,6 +13,7 @@ import {
   selectEthCallState,
   selectEthCallTimestampByKey,
   selectSign,
+  selectEthSiweSign,
 } from "./selectors";
 import { ethereum } from "../../config";
 

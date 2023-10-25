@@ -73,7 +73,7 @@
     "redux",
     "store"
   ],
-  "author": "Ensuro <guillermo@ensuro.co>",
+  "author": "Ensuro Dev Team <dev@ensuro.co>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/ensuro/ethereum-store/issues"

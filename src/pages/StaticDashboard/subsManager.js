@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { connect } from "react-redux";
-import { selectEthCallMultiple } from "../../package-index";
+import { selectEthCallMultiple } from "../../store/ethereum/selectors";
 
 const componentEthCalls = function () {
   return [
