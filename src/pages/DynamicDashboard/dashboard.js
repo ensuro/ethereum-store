@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
+import _ from "lodash";
 import { Container } from "reactstrap";
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { useDispatch } from "react-redux";
 import { connect } from "react-redux";
 import { selectEthCall } from "../../package-index";
+import { map } from "lodash";
 
-const Dashboard = ({ state }) => {
+const DynamicDashboard = ({ state, subscriptions }) => {
   let dispatch = useDispatch();
   const [contractAddress, setContractAddress] = useState("");
   const [method, setMethod] = useState("");
@@ -69,12 +71,23 @@ const Dashboard = ({ state }) => {
             Dispatch call
           </Button>
 
-          <br />
-          <br />
           {contractAddress && method && result && (
             <>
+              <hr />
               <h1>RESULT</h1>
               <h3>{result.toString()}</h3>
+            </>
+          )}
+          <hr />
+          {!_.isEmpty(subscriptions) && (
+            <>
+              <h5>Subscriptions: </h5>
+              {map(Object.keys(subscriptions), (key) => (
+                <React.Fragment key={key}>
+                  <p>{key}</p>
+                  <p>{subscriptions[key]}</p>
+                </React.Fragment>
+              ))}
             </>
           )}
         </Container>
@@ -84,7 +97,9 @@ const Dashboard = ({ state }) => {
 };
 
 const mapStateToProps = (state) => {
-  return { state: state.EthereumReducer };
+  const subscriptions = state.EthereumReducer.subscriptions;
+
+  return { state: state.EthereumReducer, subscriptions };
 };
 
-export default connect(mapStateToProps, null)(Dashboard);
+export default connect(mapStateToProps, null)(DynamicDashboard);

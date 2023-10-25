@@ -1,11 +1,12 @@
-// Dashboard
-import Dashboard from "../pages/Dashboard/dashboard";
+import DynamicDashboard from "../pages/DynamicDashboard/dashboard";
+import StaticDashboard from "../pages/StaticDashboard/staticDashboard";
 
 const userRoutes = [
-  { path: "/", component: Dashboard },
+  { path: "/", component: DynamicDashboard },
+  { path: "/static", component: StaticDashboard },
 
   // Not found page
-  { path: "*", component: Dashboard },
+  { path: "*", component: DynamicDashboard },
 ];
 
 const authRoutes = [];
