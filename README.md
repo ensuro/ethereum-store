@@ -17,7 +17,7 @@ npm install --save @ensuro/ethereum-store
 In the `reducers.js` file:
 
 ```js
-const { EthereumReducer } = require("ethereum-store");
+import EthereumReducer from "ethereum-store/src/store/ethereum/reducer";
 
 export default combineReducers({
   // ...
@@ -30,13 +30,13 @@ export default combineReducers({
 In the `sagas.js` file:
 
 ```js
-import { initializeEthereumStore } from "ethereum-store";
-const { ethereumSaga } = require("ethereum-store");
+import { ethereumSaga, initializeEthereumStore } from "ethereum-store/src/package-index";
 
 initializeEthereumStore({
   getEncodedCall,
   getContract,
   getAbiName,
+  getABI,
   getFormatter,
   getSignerContract,
   getTxReceiptStatus,
