@@ -1,6 +1,6 @@
 {
-  "name": "@ensuro/ethereum-store",
-  "version": "0.1.0",
+  "name": "ethereum-store",
+  "version": "0.2.0",
   "description": "Ethereum store for react redux",
   "scripts": {
     "prettier": "prettier --write .",

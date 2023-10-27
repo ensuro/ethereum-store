@@ -7,7 +7,7 @@ Ethereum store for react redux
 ## Install
 
 ```bash
-npm install --save @ensuro/ethereum-store
+npm install --save ethereum-store
 ```
 
 ## Configure
