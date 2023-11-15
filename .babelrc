@@ -1,0 +1,16 @@
+{
+  "presets": ["@babel/preset-env", "@babel/preset-react"],
+  "ignore": [
+    "src/helpers/**",
+    "src/pages/**",
+    "src/utils/**",
+    "src/routes/**",
+    "src/store/*.js",
+    "src/App.js",
+    "src/App.test.js",
+    "src/index.js",
+    "src/initialize.js",
+    "src/setupTests.js",
+    "src/*.css"
+  ]
+}

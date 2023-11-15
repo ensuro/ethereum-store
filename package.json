@@ -1,12 +1,13 @@
 {
   "name": "ethereum-store",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "description": "Ethereum store for react redux",
   "scripts": {
     "prettier": "prettier --write .",
     "test": "react-scripts test --env=./src/utils/testing/jest-environment-jsdom.js",
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:lib": "babel src -d lib/src; cp package.json lib/package.json; cp README.md lib/README.md; cp LICENSE lib/LICENSE",
     "eject": "react-scripts eject",
     "coverage": "react-scripts test --coverage --watchAll --env=./src/utils/testing/jest-environment-jsdom.js"
   },
@@ -16,11 +17,6 @@
       "react-app/jest"
     ]
   },
-  "files": [
-    "src/store/ethereum/*",
-    "src/config.js",
-    "src/package-index.js"
-  ],
   "browserslist": {
     "production": [
       "chrome >= 67",
@@ -50,6 +46,9 @@
     "web3": "^4.1.1"
   },
   "devDependencies": {
+    "@babel/cli": "^7.23.0",
+    "@babel/core": "^7.23.3",
+    "@babel/preset-env": "^7.23.3",
     "@openzeppelin/contracts": "^4.9.3",
     "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/react": "^14.0.0",
