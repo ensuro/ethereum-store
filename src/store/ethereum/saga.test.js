@@ -791,10 +791,113 @@ describe("All the test with provider resolver mock", () => {
     let biggerSign = selectBiggerSign(
       store.getState().EthereumReducer,
       userAddr,
-      await fakeUsdcContract.nonces(userAddr)
+      await fakeUsdcContract.nonces(userAddr),
+      spenderAddr
     );
 
     assert.deepStrictEqual(biggerSign.value.value.toString(), "200000000"); // second signature is bigger
+  });
+
+  test("Get the bigger sign of different spender", async () => {
+    const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
+    const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
+    const secondSpender = "0x329731D4FB96Ec52039e222bC4cC67a86b582A86";
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
+    fakeUsdcContract.nonces = sinon.fake.resolves(BigNumber.from(2));
+
+    const usdcDomain = {
+      name: "USDC",
+      version: "1",
+      chainId: 8001,
+      verifyingContract: currencyAddress,
+    };
+
+    const types = {
+      Permit: [
+        { name: "owner", type: "address" },
+        { name: "spender", type: "address" },
+        { name: "value", type: "uint256" },
+        { name: "nonce", type: "uint256" },
+        { name: "deadline", type: "uint256" },
+      ],
+    };
+
+    let value = {
+      owner: ethers.utils.getAddress(userAddr),
+      spender: ethers.utils.getAddress(spenderAddr),
+      value: ethers.BigNumber.from(100e6),
+      nonce: await fakeUsdcContract.nonces(userAddr),
+      deadline: deadline,
+    };
+
+    await store.dispatch({
+      type: "ETH_EIP_712_SIGN",
+      domain: usdcDomain,
+      types: types,
+      value: value,
+    });
+
+    const key = ethers.utils._TypedDataEncoder.encode(usdcDomain, types, value);
+    assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].state, "PENDING");
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].state, "SIGNED");
+    assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].signature, "0x0987654321");
+    assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key].value, value);
+    assert.deepStrictEqual(
+      store.getState().EthereumReducer.eipSigns[key].value.spender,
+      ethers.utils.getAddress(spenderAddr)
+    );
+
+    // second spender
+    value = {
+      owner: ethers.utils.getAddress(userAddr),
+      spender: ethers.utils.getAddress(secondSpender),
+      value: ethers.BigNumber.from(200e6),
+      nonce: await fakeUsdcContract.nonces(userAddr),
+      deadline: deadline,
+    };
+
+    await store.dispatch({
+      type: "ETH_EIP_712_SIGN",
+      domain: usdcDomain,
+      types: types,
+      value: value,
+    });
+
+    const key2 = ethers.utils._TypedDataEncoder.encode(usdcDomain, types, value);
+    assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key2].state, "PENDING");
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key2].state, "SIGNED");
+    assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key2].signature, "0x0987654321");
+    assert.deepStrictEqual(store.getState().EthereumReducer.eipSigns[key2].value, value);
+    assert.deepStrictEqual(
+      store.getState().EthereumReducer.eipSigns[key2].value.spender,
+      ethers.utils.getAddress(secondSpender)
+    );
+
+    let biggerSign = selectBiggerSign(
+      store.getState().EthereumReducer,
+      userAddr,
+      await fakeUsdcContract.nonces(userAddr),
+      spenderAddr
+    );
+
+    // first signature because of the spender
+    assert.deepStrictEqual(biggerSign.value.value.toString(), "100000000");
+
+    // get bigger sign of unknown spender
+    const unknownSpender = "0xd8F30147961b99d89222E660b3d3855C5eB12330";
+    biggerSign = selectBiggerSign(
+      store.getState().EthereumReducer,
+      userAddr,
+      await fakeUsdcContract.nonces(userAddr),
+      unknownSpender
+    );
+    assert.deepStrictEqual(biggerSign, undefined);
   });
 });
 
