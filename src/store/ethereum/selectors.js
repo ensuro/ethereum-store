@@ -56,18 +56,18 @@ export const selectSign = createSelector([getSigns, getSignKey], (signs, signKey
 export const selectEthSiweSign = createSelector([getSiweSigns, getSignKey], (signs, ethSignKey) => signs[ethSignKey]);
 
 export const selectBiggerSign = createSelector(
-  [getEIPSigns, (__, addr, nonce, automation) => ({ addr, nonce, automation })],
+  [getEIPSigns, (__, addr, nonce, spender) => ({ addr, nonce, spender })],
   (signs, params) => {
     const userAddr = ethers.utils.getAddress(params.addr);
     const nonce = params.nonce;
-    const automationAddr = params.automation ? ethers.utils.getAddress(params.automation) : "";
+    const spenderAddr = params.spender ? ethers.utils.getAddress(params.spender) : "";
     const filteredSigns = Object.keys(signs).filter((sign) => {
       return (
         signs[sign].state === "SIGNED" &&
         userAddr === ethers.utils.getAddress(signs[sign].userAddress) &&
         signs[sign].value.nonce.eq(nonce) &&
-        automationAddr &&
-        automationAddr === ethers.utils.getAddress(signs[sign].value.spender)
+        spenderAddr &&
+        spenderAddr === ethers.utils.getAddress(signs[sign].value.spender)
       );
     });
     const sortedSigns = filteredSigns.sort((s1, s2) => {
