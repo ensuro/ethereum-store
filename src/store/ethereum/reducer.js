@@ -59,15 +59,20 @@ const INIT_STATE = {
   },
 };
 
+const getChainStateByKey = (state, key, chainId) => {
+  let calls = { ...state.chainState };
+  calls[chainId] = calls[chainId] ? { ...calls[chainId] } : {};
+  calls[chainId][key] = calls[chainId][key] ? { ...calls[chainId][key] } : {};
+  return calls;
+};
+
 const EthereumReducer = (state = INIT_STATE, action) => {
   let chainId;
   switch (action.type) {
     case ETH_CALL:
-      let key = action.address + "_" + getEncodedCallFn(action.address, action.abi, action.method, action.args);
-      let calls = { ...state.chainState };
       chainId = state.currentChain.id;
-      calls[chainId] = calls[chainId] ? { ...calls[chainId] } : {};
-      calls[chainId].calls = calls[chainId].calls ? { ...calls[chainId].calls } : {};
+      let key = action.address + "_" + getEncodedCallFn(action.address, action.abi, action.method, action.args);
+      let calls = getChainStateByKey(state, "calls", chainId);
       calls[chainId].calls[key] = calls[chainId].calls[key] ? { ...calls[chainId].calls[key] } : {};
       if (calls[chainId].calls[key].state !== "LOADED")
         calls[chainId].calls[key].state =
@@ -77,10 +82,8 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       break;
 
     case ETH_CALL_SUCCESS:
-      let newCalls = { ...state.chainState };
       chainId = state.currentChain.id;
-      newCalls[chainId] = newCalls[chainId] ? { ...newCalls[chainId] } : {};
-      newCalls[chainId].calls = newCalls[chainId].calls ? { ...newCalls[chainId].calls } : {};
+      let newCalls = getChainStateByKey(state, "calls", chainId);
       newCalls[chainId].call_metadata = { ...(newCalls[chainId].call_metadata || {}) };
       newCalls[chainId].calls[action.call_key] = { state: "LOADED", value: action.value };
       newCalls[chainId].call_metadata[action.call_key] = { timestamp: action.timestamp };
@@ -91,10 +94,8 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       break;
 
     case ETH_CALL_FAIL:
-      let failCalls = { ...state.chainState };
       chainId = state.currentChain.id;
-      failCalls[chainId] = failCalls[chainId] ? { ...failCalls[chainId] } : {};
-      failCalls[chainId].calls = failCalls[chainId].calls ? { ...failCalls[chainId].calls } : {};
+      let failCalls = getChainStateByKey(state, "calls", chainId);
       failCalls[chainId].calls[action.call_key] = { state: "ERROR" };
       state = {
         ...state,
@@ -104,9 +105,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_ADD_SUBSCRIPTION:
       chainId = state.currentChain.id;
-      let subs = { ...state.chainState };
-      subs[chainId] = subs[chainId] ? { ...subs[chainId] } : {};
-      subs[chainId].subscriptions = subs[chainId].subscriptions ? { ...subs[chainId].subscriptions } : {};
+      let subs = getChainStateByKey(state, "subscriptions", chainId);
       subs[chainId].subscriptions[action.key] = action.componentEthCalls;
       state = {
         ...state,
@@ -172,9 +171,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_SIWE_SIGN:
       chainId = state.currentChain.id;
-      let signs = { ...state.chainState };
-      signs[chainId] = signs[chainId] ? { ...signs[chainId] } : {};
-      signs[chainId].siweSigns = signs[chainId].siweSigns ? { ...signs[chainId].siweSigns } : {};
+      let signs = getChainStateByKey(state, "siweSigns", chainId);
       signs[chainId].siweSigns[action.userAddress] = { state: "PENDING" };
       state = {
         ...state,
@@ -185,9 +182,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
     case SET_ETH_SIWE_SIGN:
     case ETH_SIWE_SIGN_PROCESSED:
       chainId = state.currentChain.id;
-      let fullSigns = { ...state.chainState };
-      fullSigns[chainId] = fullSigns[chainId] ? { ...fullSigns[chainId] } : {};
-      fullSigns[chainId].siweSigns = fullSigns[chainId].siweSigns ? { ...fullSigns[chainId].siweSigns } : {};
+      let fullSigns = getChainStateByKey(state, "siweSigns", chainId);
       fullSigns[chainId].siweSigns[action.userAddress] = {
         state: "SIGNED",
         signature: action.signature,
@@ -205,38 +200,27 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_SIWE_SIGN_FAILED:
       chainId = state.currentChain.id;
-      let siweFailed = { ...state.chainState };
-      siweFailed[chainId] = siweFailed[chainId] ? { ...siweFailed[chainId] } : {};
-      siweFailed[chainId].eipSigns = siweFailed[chainId].eipSigns ? { ...siweFailed[chainId].eipSigns } : {};
-      siweFailed[chainId].eipSigns[action.key] = {
-        ...siweFailed[chainId].eipSigns[action.key],
+      let siweFailed = getChainStateByKey(state, "siweSigns", chainId);
+      siweFailed[chainId].siweSigns[action.key] = {
+        ...siweFailed[chainId].siweSigns[action.key],
         state: "ERROR",
         error: action.payload,
       };
-      state = {
-        ...state,
-        chainState: siweFailed,
-      };
+      state = { ...state, chainState: siweFailed };
       break;
 
     case ETH_EIP_712_SIGN:
       chainId = state.currentChain.id;
       const eipKey = ethers.utils._TypedDataEncoder.encode(action.domain, action.types, action.value);
-      let eip712 = { ...state.chainState };
-      eip712[chainId] = eip712[chainId] ? { ...eip712[chainId] } : {};
-      eip712[chainId].eipSigns = eip712[chainId].eipSigns ? { ...eip712[chainId].eipSigns } : {};
+
+      let eip712 = getChainStateByKey(state, "eipSigns", chainId);
       eip712[chainId].eipSigns[eipKey] = { state: "PENDING" };
-      state = {
-        ...state,
-        chainState: eip712,
-      };
+      state = { ...state, chainState: eip712 };
       break;
 
     case ETH_EIP_712_SIGN_PROCESSED:
       chainId = state.currentChain.id;
-      let eipSigned = { ...state.chainState };
-      eipSigned[chainId] = eipSigned[chainId] ? { ...eipSigned[chainId] } : {};
-      eipSigned[chainId].eipSigns = eipSigned[chainId].eipSigns ? { ...eipSigned[chainId].eipSigns } : {};
+      let eipSigned = getChainStateByKey(state, "eipSigns", chainId);
       eipSigned[chainId].eipSigns[action.key] = {
         state: "SIGNED",
         userAddress: action.userAddress,
@@ -245,34 +229,24 @@ const EthereumReducer = (state = INIT_STATE, action) => {
         types: action.types,
         value: action.value,
       };
-      state = {
-        ...state,
-        chainState: eipSigned,
-      };
+      state = { ...state, chainState: eipSigned };
       break;
 
     case ETH_EIP_712_SIGN_FAILED:
       chainId = state.currentChain.id;
-      let failed = { ...state.chainState };
-      failed[chainId] = failed[chainId] ? { ...failed[chainId] } : {};
-      failed[chainId].eipSigns = failed[chainId].eipSigns ? { ...failed[chainId].eipSigns } : {};
+      let failed = getChainStateByKey(state, "eipSigns", chainId);
       failed[chainId].eipSigns[action.key] = {
         ...failed[chainId].eipSigns[action.key],
         state: "ERROR",
         error: action.payload,
         userAddress: action.userAddress,
       };
-      state = {
-        ...state,
-        chainState: failed,
-      };
+      state = { ...state, chainState: failed };
       break;
 
     case ETH_PLAIN_SIGN:
       chainId = state.currentChain.id;
-      let plainSigns = { ...state.chainState };
-      plainSigns[chainId] = plainSigns[chainId] ? { ...plainSigns[chainId] } : {};
-      plainSigns[chainId].signs = plainSigns[chainId].signs ? { ...plainSigns[chainId].signs } : {};
+      let plainSigns = getChainStateByKey(state, "signs", chainId);
       plainSigns[chainId].signs[action.userAddress] = { state: "PENDING" };
       state = {
         ...state,
@@ -282,9 +256,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_PLAIN_SIGN_PROCESSED:
       chainId = state.currentChain.id;
-      let fullPlainSigns = { ...state.chainState };
-      fullPlainSigns[chainId] = fullPlainSigns[chainId] ? { ...fullPlainSigns[chainId] } : {};
-      fullPlainSigns[chainId].signs = fullPlainSigns[chainId].signs ? { ...fullPlainSigns[chainId].signs } : {};
+      let fullPlainSigns = getChainStateByKey(state, "signs", chainId);
       fullPlainSigns[chainId].signs[action.key] = {
         state: "SIGNED",
         signature: action.signature,
@@ -298,9 +270,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_PLAIN_SIGN_FAILED:
       chainId = state.currentChain.id;
-      let plainFail = { ...state.chainState };
-      plainFail[chainId] = plainFail[chainId] ? { ...plainFail[chainId] } : {};
-      plainFail[chainId].signs = plainFail[chainId].signs ? { ...plainFail[chainId].signs } : {};
+      let plainFail = getChainStateByKey(state, "signs", chainId);
       plainFail[chainId].signs[action.key] = {
         ...plainFail[chainId].signs[action.key],
         state: "ERROR",
