@@ -23,90 +23,103 @@ import {
   ETH_PLAIN_SIGN,
   ETH_PLAIN_SIGN_PROCESSED,
   ETH_PLAIN_SIGN_FAILED,
+  SET_USER_CURRENT_CHAIN,
 } from "./actionTypes";
 
 const { ethers } = require("ethers");
 const INIT_STATE = {
-  calls: {},
-  /*
-   * calls: { "0xsfsdf"_getBalance(nicolas): {
-   *   <address>_<encodedCall>: {
-   *       state: "LOADING|LOADED|ERROR",
-   *       value: <decodedValue>,
-   *       retries: undefined | number
-   *   }
-   * }
-   *
-   */
-  call_metadata: {}, // Different dictionary to avoid re-rendering if only timestamp changes
-  /*
-   * <call_key>: {timestamp: <timestamp-with-milisecs>}
-   */
-  subscriptions: {},
-  /*
-   * <component_key>: [ ETH call list ]
-   */
   timestamp: 0,
   transacts: [],
-  signs: {},
-  siweSigns: {},
-  eipSigns: {},
+  // signs: {},
+  // siweSigns: {},
+  // eipSigns: {},
+  currentChain: { name: "Mumbai", id: 80001 },
+  chainState: {
+    /*
+     * <chainId>: {
+     *    calls: { "0xsfsdf"_getBalance(nicolas): {
+     *      <address>_<encodedCall>: {
+     *          state: "LOADING|LOADED|ERROR",
+     *          value: <decodedValue>,
+     *          retries: undefined | number
+     *      }
+     *    }
+     *    // Different dictionary to avoid re-rendering if only timestamp changes
+     *    call_metadata: {
+     *        call_key>: {timestamp: <timestamp-with-milisecs>}
+     *    },
+     *    subscriptions: {
+     *        <component_key>: [ ETH call list ]
+     *    },
+     *    transacts: [],
+     *    signs: {},
+     *    siweSigns: {},
+     *    eipSigns: {},
+     */
+  },
 };
 
 const EthereumReducer = (state = INIT_STATE, action) => {
+  let chainId;
   switch (action.type) {
     case ETH_CALL:
       let key = action.address + "_" + getEncodedCallFn(action.address, action.abi, action.method, action.args);
-      let newCallState = state.calls[key] ? { ...state.calls[key] } : {};
-      if (newCallState.state !== "LOADED")
-        newCallState.state = newCallState.state !== "LOADED" ? "LOADING" : newCallState.state;
-      if (action.retry !== undefined) newCallState.retries = action.retry;
-      state = { ...state, calls: { ...state.calls, [key]: newCallState } };
+      let calls = { ...state.chainState };
+      chainId = state.currentChain.id;
+      calls[chainId] = calls[chainId] ? { ...calls[chainId] } : {};
+      calls[chainId].calls = calls[chainId].calls ? { ...calls[chainId].calls } : {};
+      calls[chainId].calls[key] = calls[chainId].calls[key] ? { ...calls[chainId].calls[key] } : {};
+      if (calls[chainId].calls[key].state !== "LOADED")
+        calls[chainId].calls[key].state =
+          calls[chainId].calls[key].state !== "LOADED" ? "LOADING" : calls[chainId].calls[key].state;
+      if (action.retry !== undefined) calls[chainId].calls[key].retries = action.retry;
+      state = { ...state, chainState: calls };
       break;
 
     case ETH_CALL_SUCCESS:
+      let newCalls = { ...state.chainState };
+      chainId = state.currentChain.id;
+      newCalls[chainId] = newCalls[chainId] ? { ...newCalls[chainId] } : {};
+      newCalls[chainId].calls = newCalls[chainId].calls ? { ...newCalls[chainId].calls } : {};
+      newCalls[chainId].call_metadata = { ...(newCalls[chainId].call_metadata || {}) };
+      newCalls[chainId].calls[action.call_key] = { state: "LOADED", value: action.value };
+      newCalls[chainId].call_metadata[action.call_key] = { timestamp: action.timestamp };
       state = {
         ...state,
-        calls: {
-          ...state.calls,
-          [action.call_key]: { state: "LOADED", value: action.value },
-        },
-        call_metadata: {
-          ...state.call_metadata,
-          [action.call_key]: {
-            ...(state.call_metadata[action.call_key] || {}),
-            timestamp: action.timestamp,
-          },
-        },
+        chainState: newCalls,
       };
       break;
 
     case ETH_CALL_FAIL:
+      let failCalls = { ...state.chainState };
+      chainId = state.currentChain.id;
+      failCalls[chainId] = failCalls[chainId] ? { ...failCalls[chainId] } : {};
+      failCalls[chainId].calls = failCalls[chainId].calls ? { ...failCalls[chainId].calls } : {};
+      failCalls[chainId].calls[action.call_key] = { state: "ERROR" };
       state = {
         ...state,
-        calls: {
-          ...state.calls,
-          [action.call_key]: { ...state.calls[action.call_key], state: "ERROR" },
-        },
+        chainState: failCalls,
       };
       break;
 
     case ETH_ADD_SUBSCRIPTION:
+      chainId = state.currentChain.id;
+      let subs = { ...state.chainState };
+      subs[chainId] = subs[chainId] ? { ...subs[chainId] } : {};
+      subs[chainId].subscriptions = subs[chainId].subscriptions ? { ...subs[chainId].subscriptions } : {};
+      subs[chainId].subscriptions[action.key] = action.componentEthCalls;
       state = {
         ...state,
-        subscriptions: {
-          ...state.subscriptions,
-          [action.key]: action.componentEthCalls,
-        },
+        chainState: subs,
       };
       break;
 
     case ETH_REMOVE_SUBSCRIPTION:
-      let newMountedComponents = { ...state.subscriptions };
-      delete newMountedComponents[action.key];
+      let newChainState = { ...state.chainState };
+      delete newChainState[state.currentChain.id].subscriptions[action.key];
       state = {
         ...state,
-        subscriptions: newMountedComponents,
+        chainState: newChainState,
       };
       break;
 
@@ -158,119 +171,149 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       break;
 
     case ETH_SIWE_SIGN:
+      chainId = state.currentChain.id;
+      let signs = { ...state.chainState };
+      signs[chainId] = signs[chainId] ? { ...signs[chainId] } : {};
+      signs[chainId].siweSigns = signs[chainId].siweSigns ? { ...signs[chainId].siweSigns } : {};
+      signs[chainId].siweSigns[action.userAddress] = { state: "PENDING" };
       state = {
         ...state,
-        siweSigns: {
-          ...state.siweSigns,
-          [action.userAddress]: { state: "PENDING" },
-        },
+        chainState: signs,
       };
       break;
 
     case SET_ETH_SIWE_SIGN:
     case ETH_SIWE_SIGN_PROCESSED:
+      chainId = state.currentChain.id;
+      let fullSigns = { ...state.chainState };
+      fullSigns[chainId] = fullSigns[chainId] ? { ...fullSigns[chainId] } : {};
+      fullSigns[chainId].siweSigns = fullSigns[chainId].siweSigns ? { ...fullSigns[chainId].siweSigns } : {};
+      fullSigns[chainId].siweSigns[action.userAddress] = {
+        state: "SIGNED",
+        signature: action.signature,
+        message: action.message,
+        email: action.email,
+        country: action.country,
+        occupation: action.occupation,
+        whitelist: action.whitelist,
+      };
       state = {
         ...state,
-        siweSigns: {
-          ...state.siweSigns,
-          [action.key]: {
-            state: "SIGNED",
-            signature: action.signature,
-            message: action.message,
-            email: action.email,
-            country: action.country,
-            occupation: action.occupation,
-            whitelist: action.whitelist,
-          },
-        },
+        chainState: fullSigns,
       };
       break;
 
     case ETH_SIWE_SIGN_FAILED:
+      chainId = state.currentChain.id;
+      let siweFailed = { ...state.chainState };
+      siweFailed[chainId] = siweFailed[chainId] ? { ...siweFailed[chainId] } : {};
+      siweFailed[chainId].eipSigns = siweFailed[chainId].eipSigns ? { ...siweFailed[chainId].eipSigns } : {};
+      siweFailed[chainId].eipSigns[action.key] = {
+        ...siweFailed[chainId].eipSigns[action.key],
+        state: "ERROR",
+        error: action.payload,
+      };
       state = {
         ...state,
-        siweSigns: {
-          ...state.siweSigns,
-          [action.key]: { ...state.siweSigns[action.key], state: "ERROR", error: action.payload },
-        },
+        chainState: siweFailed,
       };
       break;
 
     case ETH_EIP_712_SIGN:
+      chainId = state.currentChain.id;
       const eipKey = ethers.utils._TypedDataEncoder.encode(action.domain, action.types, action.value);
+      let eip712 = { ...state.chainState };
+      eip712[chainId] = eip712[chainId] ? { ...eip712[chainId] } : {};
+      eip712[chainId].eipSigns = eip712[chainId].eipSigns ? { ...eip712[chainId].eipSigns } : {};
+      eip712[chainId].eipSigns[eipKey] = { state: "PENDING" };
       state = {
         ...state,
-        eipSigns: {
-          ...state.eipSigns,
-          [eipKey]: { state: "PENDING" },
-        },
+        chainState: eip712,
       };
       break;
 
     case ETH_EIP_712_SIGN_PROCESSED:
+      chainId = state.currentChain.id;
+      let eipSigned = { ...state.chainState };
+      eipSigned[chainId] = eipSigned[chainId] ? { ...eipSigned[chainId] } : {};
+      eipSigned[chainId].eipSigns = eipSigned[chainId].eipSigns ? { ...eipSigned[chainId].eipSigns } : {};
+      eipSigned[chainId].eipSigns[action.key] = {
+        state: "SIGNED",
+        userAddress: action.userAddress,
+        signature: action.signature,
+        domain: action.domain,
+        types: action.types,
+        value: action.value,
+      };
       state = {
         ...state,
-        eipSigns: {
-          ...state.eipSigns,
-          [action.key]: {
-            state: "SIGNED",
-            userAddress: action.userAddress,
-            signature: action.signature,
-            domain: action.domain,
-            types: action.types,
-            value: action.value,
-          },
-        },
+        chainState: eipSigned,
       };
       break;
 
     case ETH_EIP_712_SIGN_FAILED:
+      chainId = state.currentChain.id;
+      let failed = { ...state.chainState };
+      failed[chainId] = failed[chainId] ? { ...failed[chainId] } : {};
+      failed[chainId].eipSigns = failed[chainId].eipSigns ? { ...failed[chainId].eipSigns } : {};
+      failed[chainId].eipSigns[action.key] = {
+        ...failed[chainId].eipSigns[action.key],
+        state: "ERROR",
+        error: action.payload,
+        userAddress: action.userAddress,
+      };
       state = {
         ...state,
-        eipSigns: {
-          ...state.eipSigns,
-          [action.key]: {
-            ...state.eipSigns[action.key],
-            state: "ERROR",
-            error: action.payload,
-            userAddress: action.userAddress,
-          },
-        },
+        chainState: failed,
       };
       break;
 
     case ETH_PLAIN_SIGN:
+      chainId = state.currentChain.id;
+      let plainSigns = { ...state.chainState };
+      plainSigns[chainId] = plainSigns[chainId] ? { ...plainSigns[chainId] } : {};
+      plainSigns[chainId].signs = plainSigns[chainId].signs ? { ...plainSigns[chainId].signs } : {};
+      plainSigns[chainId].signs[action.userAddress] = { state: "PENDING" };
       state = {
         ...state,
-        signs: {
-          ...state.signs,
-          [action.userAddress]: { state: "PENDING" },
-        },
+        chainState: plainSigns,
       };
       break;
 
     case ETH_PLAIN_SIGN_PROCESSED:
+      chainId = state.currentChain.id;
+      let fullPlainSigns = { ...state.chainState };
+      fullPlainSigns[chainId] = fullPlainSigns[chainId] ? { ...fullPlainSigns[chainId] } : {};
+      fullPlainSigns[chainId].signs = fullPlainSigns[chainId].signs ? { ...fullPlainSigns[chainId].signs } : {};
+      fullPlainSigns[chainId].signs[action.key] = {
+        state: "SIGNED",
+        signature: action.signature,
+        message: action.message,
+      };
       state = {
         ...state,
-        signs: {
-          ...state.signs,
-          [action.key]: {
-            state: "SIGNED",
-            signature: action.signature,
-            message: action.message,
-          },
-        },
+        chainState: fullPlainSigns,
       };
       break;
 
     case ETH_PLAIN_SIGN_FAILED:
+      chainId = state.currentChain.id;
+      let plainFail = { ...state.chainState };
+      plainFail[chainId] = plainFail[chainId] ? { ...plainFail[chainId] } : {};
+      plainFail[chainId].signs = plainFail[chainId].signs ? { ...plainFail[chainId].signs } : {};
+      plainFail[chainId].signs[action.key] = {
+        ...plainFail[chainId].signs[action.key],
+        state: "ERROR",
+        error: action.payload,
+      };
       state = {
         ...state,
-        signs: {
-          ...state.signs,
-          [action.key]: { ...state.signs[action.key], state: "ERROR", error: action.payload },
-        },
+        chainState: plainFail,
       };
+      break;
+
+    case SET_USER_CURRENT_CHAIN:
+      state = { ...state, currentChain: { name: action.name, id: action.id } };
       break;
 
     default:

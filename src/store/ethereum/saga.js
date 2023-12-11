@@ -163,7 +163,8 @@ export function* listenTransact({ id, txHash, retry }) {
 
 export function* refreshAllSubscriptionsCalls() {
   const state = yield select((state) => state.EthereumReducer);
-  const subscriptions = state.subscriptions;
+  const chainId = state.currentChain.id;
+  const subscriptions = state.chainState[chainId]?.subscriptions;
   const now = new Date().getTime();
   const timestamp = state.timestamp;
   if (timestamp === 0 || timestamp < now) {
