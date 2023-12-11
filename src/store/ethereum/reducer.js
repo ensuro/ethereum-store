@@ -30,9 +30,6 @@ const { ethers } = require("ethers");
 const INIT_STATE = {
   timestamp: 0,
   transacts: [],
-  // signs: {},
-  // siweSigns: {},
-  // eipSigns: {},
   currentChain: { name: "Mumbai", id: 80001 },
   chainState: {
     /*
@@ -87,46 +84,31 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       newCalls[chainId].call_metadata = { ...(newCalls[chainId].call_metadata || {}) };
       newCalls[chainId].calls[action.call_key] = { state: "LOADED", value: action.value };
       newCalls[chainId].call_metadata[action.call_key] = { timestamp: action.timestamp };
-      state = {
-        ...state,
-        chainState: newCalls,
-      };
+      state = { ...state, chainState: newCalls };
       break;
 
     case ETH_CALL_FAIL:
       chainId = state.currentChain.id;
       let failCalls = getChainStateByKey(state, "calls", chainId);
       failCalls[chainId].calls[action.call_key] = { state: "ERROR" };
-      state = {
-        ...state,
-        chainState: failCalls,
-      };
+      state = { ...state, chainState: failCalls };
       break;
 
     case ETH_ADD_SUBSCRIPTION:
       chainId = state.currentChain.id;
       let subs = getChainStateByKey(state, "subscriptions", chainId);
       subs[chainId].subscriptions[action.key] = action.componentEthCalls;
-      state = {
-        ...state,
-        chainState: subs,
-      };
+      state = { ...state, chainState: subs };
       break;
 
     case ETH_REMOVE_SUBSCRIPTION:
       let newChainState = { ...state.chainState };
       delete newChainState[state.currentChain.id].subscriptions[action.key];
-      state = {
-        ...state,
-        chainState: newChainState,
-      };
+      state = { ...state, chainState: newChainState };
       break;
 
     case SET_TIMESTAMP_TO_REFRESH:
-      state = {
-        ...state,
-        timestamp: action.timestamp,
-      };
+      state = { ...state, timestamp: action.timestamp };
       break;
 
     case ETH_TRANSACT:
@@ -173,10 +155,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       chainId = state.currentChain.id;
       let signs = getChainStateByKey(state, "siweSigns", chainId);
       signs[chainId].siweSigns[action.userAddress] = { state: "PENDING" };
-      state = {
-        ...state,
-        chainState: signs,
-      };
+      state = { ...state, chainState: signs };
       break;
 
     case SET_ETH_SIWE_SIGN:
@@ -192,10 +171,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
         occupation: action.occupation,
         whitelist: action.whitelist,
       };
-      state = {
-        ...state,
-        chainState: fullSigns,
-      };
+      state = { ...state, chainState: fullSigns };
       break;
 
     case ETH_SIWE_SIGN_FAILED:
@@ -248,10 +224,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       chainId = state.currentChain.id;
       let plainSigns = getChainStateByKey(state, "signs", chainId);
       plainSigns[chainId].signs[action.userAddress] = { state: "PENDING" };
-      state = {
-        ...state,
-        chainState: plainSigns,
-      };
+      state = { ...state, chainState: plainSigns };
       break;
 
     case ETH_PLAIN_SIGN_PROCESSED:
@@ -262,10 +235,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
         signature: action.signature,
         message: action.message,
       };
-      state = {
-        ...state,
-        chainState: fullPlainSigns,
-      };
+      state = { ...state, chainState: fullPlainSigns };
       break;
 
     case ETH_PLAIN_SIGN_FAILED:
@@ -276,10 +246,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
         state: "ERROR",
         error: action.payload,
       };
-      state = {
-        ...state,
-        chainState: plainFail,
-      };
+      state = { ...state, chainState: plainFail };
       break;
 
     case SET_USER_CURRENT_CHAIN:
