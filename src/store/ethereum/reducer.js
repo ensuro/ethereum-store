@@ -90,7 +90,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
     case ETH_CALL_FAIL:
       chainId = state.currentChain.id;
       let failCalls = getChainStateByKey(state, "calls", chainId);
-      failCalls[chainId].calls[action.call_key] = { state: "ERROR" };
+      failCalls[chainId].calls[action.call_key] = { ...failCalls[chainId].calls[action.call_key], state: "ERROR" };
       state = { ...state, chainState: failCalls };
       break;
 
@@ -162,7 +162,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
     case ETH_SIWE_SIGN_PROCESSED:
       chainId = state.currentChain.id;
       let fullSigns = getChainStateByKey(state, "siweSigns", chainId);
-      fullSigns[chainId].siweSigns[action.userAddress] = {
+      fullSigns[chainId].siweSigns[action.key] = {
         state: "SIGNED",
         signature: action.signature,
         message: action.message,
