@@ -124,7 +124,8 @@ export function* makeEthCall({ retry, address, abi, method, args, forceCall, max
 export function* makeEthTransact({ address, abi, method, args }) {
   const state = yield select((state) => state.EthereumReducer);
   const userState = yield select((state) => state.UserReducer);
-  const id = state.transacts.length - 1;
+  const chainId = state.currentChain.id;
+  const id = state.chainState[chainId].transacts.length - 1;
   try {
     if (selectChainIdFn(userState) === envChain.id) {
       const response = yield call(_.partial(ethSignerCall, address, abi, method, args, userState));

@@ -29,7 +29,6 @@ import {
 const { ethers } = require("ethers");
 const INIT_STATE = {
   timestamp: 0,
-  transacts: [],
   currentChain: { name: "Mumbai", id: 80001 },
   chainState: {
     /*
@@ -57,10 +56,10 @@ const INIT_STATE = {
 };
 
 const getChainStateByKey = (state, key, chainId) => {
-  let calls = { ...state.chainState };
-  calls[chainId] = calls[chainId] ? { ...calls[chainId] } : {};
-  calls[chainId][key] = calls[chainId][key] ? { ...calls[chainId][key] } : {};
-  return calls;
+  let ret = { ...state.chainState };
+  ret[chainId] = { ...(ret[chainId] || {}) };
+  ret[chainId][key] = { ...(ret[chainId][key] || {}) };
+  return ret;
 };
 
 const EthereumReducer = (state = INIT_STATE, action) => {
@@ -70,7 +69,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       chainId = state.currentChain.id;
       let key = action.address + "_" + getEncodedCallFn(action.address, action.abi, action.method, action.args);
       let calls = getChainStateByKey(state, "calls", chainId);
-      calls[chainId].calls[key] = calls[chainId].calls[key] ? { ...calls[chainId].calls[key] } : {};
+      calls[chainId].calls[key] = { ...(calls[chainId].calls[key] || {}) };
       if (calls[chainId].calls[key].state !== "LOADED")
         calls[chainId].calls[key].state =
           calls[chainId].calls[key].state !== "LOADED" ? "LOADING" : calls[chainId].calls[key].state;
@@ -112,43 +111,73 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       break;
 
     case ETH_TRANSACT:
-      state = {
-        ...state,
-        transacts: [...state.transacts, { address: action.address, method: action.method, args: action.args }],
-      };
+      chainId = state.currentChain.id;
+      let t = { ...state.chainState };
+      t[chainId] = { ...(t[chainId] || {}) };
+      t[chainId].transacts = [
+        ...(t[chainId].transacts || []),
+        { address: action.address, method: action.method, args: action.args },
+      ];
+      state = { ...state, chainState: t };
       break;
 
     case ETH_TRANSACT_QUEUED:
-      let newTransacts = [...state.transacts];
-      newTransacts[action.id] = { ...newTransacts[action.id], txHash: action.txHash, state: "QUEUED" };
-      state = { ...state, transacts: newTransacts };
-
+      chainId = state.currentChain.id;
+      let newTransacts = { ...state.chainState };
+      newTransacts[chainId] = { ...(newTransacts[chainId] || {}) };
+      newTransacts[chainId].transacts = [...(newTransacts[chainId].transacts || [])];
+      newTransacts[chainId].transacts[action.id] = {
+        ...newTransacts[chainId].transacts[action.id],
+        txHash: action.txHash,
+        state: "QUEUED",
+      };
+      state = { ...state, chainState: newTransacts };
       break;
 
     case ETH_TRANSACT_REJECTED:
-      let transactWithError = [...state.transacts];
-      transactWithError[action.id] = { ...transactWithError[action.id], error: action.payload, state: "REJECTED" };
-      state = { ...state, transacts: transactWithError };
-
+      chainId = state.currentChain.id;
+      let transactWithError = { ...state.chainState };
+      transactWithError[chainId] = { ...(transactWithError[chainId] || {}) };
+      transactWithError[chainId].transacts = [...(transactWithError[chainId].transacts || [])];
+      transactWithError[chainId].transacts[action.id] = {
+        ...transactWithError[chainId].transacts[action.id],
+        error: action.payload,
+        state: "REJECTED",
+      };
+      state = { ...state, chainState: transactWithError };
       break;
 
     case ETH_TRANSACT_MINED:
-      let transactMined = [...state.transacts];
-      transactMined[action.id] = { ...transactMined[action.id], state: "MINED" };
-      state = { ...state, transacts: transactMined };
-
+      chainId = state.currentChain.id;
+      let transactMined = { ...state.chainState };
+      transactMined[chainId] = { ...(transactMined[chainId] || {}) };
+      transactMined[chainId].transacts = [...(transactMined[chainId].transacts || [])];
+      transactMined[chainId].transacts[action.id] = { ...transactMined[chainId].transacts[action.id], state: "MINED" };
+      state = { ...state, chainState: transactMined };
       break;
 
     case ETH_TRANSACT_REVERTED:
-      let transactRejected = [...state.transacts];
-      transactRejected[action.id] = { ...transactRejected[action.id], state: "REVERTED" };
-      state = { ...state, transacts: transactRejected };
+      chainId = state.currentChain.id;
+      let transactRejected = { ...state.chainState };
+      transactRejected[chainId] = { ...(transactRejected[chainId] || {}) };
+      transactRejected[chainId].transacts = [...(transactRejected[chainId].transacts || [])];
+      transactRejected[chainId].transacts[action.id] = {
+        ...transactRejected[chainId].transacts[action.id],
+        state: "REVERTED",
+      };
+      state = { ...state, chainState: transactRejected };
       break;
 
     case ETH_TRANSACT_EXPIRED:
-      let transactExpired = [...state.transacts];
-      transactExpired[action.id] = { ...transactExpired[action.id], state: "EXPIRED" };
-      state = { ...state, transacts: transactExpired };
+      chainId = state.currentChain.id;
+      let transactExpired = { ...state.chainState };
+      transactExpired[chainId] = { ...(transactExpired[chainId] || {}) };
+      transactExpired[chainId].transacts = [...(transactExpired[chainId].transacts || [])];
+      transactExpired[chainId].transacts[action.id] = {
+        ...transactExpired[chainId].transacts[action.id],
+        state: "EXPIRED",
+      };
+      state = { ...state, chainState: transactExpired };
       break;
 
     case ETH_SIWE_SIGN:

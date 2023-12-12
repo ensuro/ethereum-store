@@ -4,7 +4,6 @@ import { getEncodedCallFn } from "../../package-index";
 
 const { ethers } = require("ethers");
 
-const getTransacts = (state) => state.transacts;
 const getCurrentChain = (state) => state.currentChain;
 const getChainState = (state) => state.chainState;
 
@@ -36,6 +35,12 @@ const getChainStateSiweSigns = (state) => {
   const chainId = getCurrentChain(state).id;
   const chainState = getChainState(state);
   return chainState[chainId] && chainState[chainId].siweSigns ? chainState[chainId].siweSigns : {};
+};
+
+const getChainStateTransacts = (state) => {
+  const chainId = getCurrentChain(state).id;
+  const chainState = getChainState(state);
+  return chainState[chainId] && chainState[chainId].transacts ? chainState[chainId].transacts : [];
 };
 
 const getSignKey = (__, address) => {
@@ -78,7 +83,10 @@ export const selectEthCallMultiple = createSelector([getChainStateCalls, getCall
   });
 });
 
-export const selectLastTransact = createSelector([getTransacts], (transacts) => transacts[transacts.length - 1]);
+export const selectLastTransact = createSelector(
+  [getChainStateTransacts],
+  (transacts) => transacts[transacts.length - 1]
+);
 
 export const selectSign = createSelector([getChainStatePlainSigns, getSignKey], (signs, signKey) => signs[signKey]);
 
