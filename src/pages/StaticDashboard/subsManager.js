@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { connect } from "react-redux";
-import { selectEthCallMultiple } from "../../store/ethereum/selectors";
+import { selectCurrentChain, selectEthCallMultiple } from "../../store/ethereum/selectors";
 
 const componentEthCalls = function () {
   return [
@@ -14,7 +14,7 @@ const componentEthCalls = function () {
   ];
 };
 
-const SubsManager = ({ symbol }) => {
+const SubsManager = ({ symbol, currentChain }) => {
   let dispatch = useDispatch();
   const mounted = useRef(false);
 
@@ -30,7 +30,7 @@ const SubsManager = ({ symbol }) => {
       dispatch({ type: "ETH_REMOVE_SUBSCRIPTION", key: "subsManager" });
       mounted.current = false;
     };
-  }, [dispatch]);
+  }, [dispatch, currentChain]);
 
   return (
     <React.Fragment>
@@ -47,7 +47,8 @@ const SubsManager = ({ symbol }) => {
 
 const mapStateToProps = (state) => {
   const [symbol] = selectEthCallMultiple(state.EthereumReducer, componentEthCalls());
-  return { symbol };
+  const currentChain = selectCurrentChain(state.EthereumReducer);
+  return { symbol, currentChain };
 };
 
 export default connect(mapStateToProps, null)(SubsManager);

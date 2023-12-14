@@ -47,13 +47,17 @@ const getSignKey = (__, address) => {
   return address;
 };
 
-const getCallKey = (__, address, abiName, method, ...args) =>
-  address + "_" + getEncodedCallFn(address, abiName, method, args);
+const getCallKey = (state, address, abiName, method, ...args) => {
+  const rpc = state.currentChain.rpc;
+  return address + "_" + getEncodedCallFn(address, abiName, method, args, rpc);
+};
 
-const getCallKeys = (__, calls) =>
-  _.map(calls, (call) => {
-    return call.address + "_" + getEncodedCallFn(call.address, call.abi, call.method, call.args);
+const getCallKeys = (state, calls) => {
+  const rpc = state.currentChain.rpc;
+  return _.map(calls, (call) => {
+    return call.address + "_" + getEncodedCallFn(call.address, call.abi, call.method, call.args, rpc);
   });
+};
 
 export const selectCurrentChain = createSelector([getCurrentChain], (currentChain) => currentChain);
 

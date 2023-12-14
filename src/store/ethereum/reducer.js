@@ -29,7 +29,7 @@ import {
 const { ethers } = require("ethers");
 const INIT_STATE = {
   timestamp: 0,
-  currentChain: { name: "Arbitrum Goerli", id: 421613 },
+  currentChain: { name: "", id: -1, rpc: "" },
   chainState: {
     /*
      * <chainId>: {
@@ -74,7 +74,8 @@ const EthereumReducer = (state = INIT_STATE, action) => {
   switch (action.type) {
     case ETH_CALL:
       chainId = state.currentChain.id;
-      let key = action.address + "_" + getEncodedCallFn(action.address, action.abi, action.method, action.args);
+      let rpc = state.currentChain.rpc;
+      let key = action.address + "_" + getEncodedCallFn(action.address, action.abi, action.method, action.args, rpc);
       let calls = getChainStateByKey(state, "calls", chainId);
       calls[chainId].calls[key] = { ...(calls[chainId].calls[key] || {}) };
       if (calls[chainId].calls[key].state !== "LOADED")
@@ -109,7 +110,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_REMOVE_SUBSCRIPTION:
       let newChainState = { ...state.chainState };
-      delete newChainState[state.currentChain.id].subscriptions[action.key];
+      delete newChainState[state.currentChain.id]?.subscriptions[action.key];
       state = { ...state, chainState: newChainState };
       break;
 
@@ -276,7 +277,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       break;
 
     case SET_USER_CURRENT_CHAIN:
-      state = { ...state, currentChain: { name: action.name, id: action.id } };
+      state = { ...state, currentChain: { name: action.name, id: action.id, rpc: action.rpc } };
       break;
 
     default:

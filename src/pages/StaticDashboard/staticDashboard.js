@@ -5,7 +5,7 @@ import { Container } from "reactstrap";
 import { Button } from "react-bootstrap";
 import { useDispatch } from "react-redux";
 import { connect } from "react-redux";
-import { selectEthCallMultiple } from "../../store/ethereum/selectors";
+import { selectCurrentChain, selectEthCallMultiple } from "../../store/ethereum/selectors";
 import SubsManager from "./subsManager";
 
 const componentEthCalls = function () {
@@ -19,7 +19,7 @@ const componentEthCalls = function () {
   ];
 };
 
-const Static = ({ totalSupply, subscriptions }) => {
+const Static = ({ totalSupply, subscriptions, currentChain }) => {
   let dispatch = useDispatch();
   const [sub, setSub] = useState(false);
   const mounted = useRef(false);
@@ -36,7 +36,7 @@ const Static = ({ totalSupply, subscriptions }) => {
       dispatch({ type: "ETH_REMOVE_SUBSCRIPTION", key: "staticDashboard" });
       mounted.current = false;
     };
-  }, [dispatch]);
+  }, [dispatch, currentChain]);
 
   return (
     <React.Fragment>
@@ -94,8 +94,9 @@ const Static = ({ totalSupply, subscriptions }) => {
 
 const mapStateToProps = (state) => {
   const [totalSupply] = selectEthCallMultiple(state.EthereumReducer, componentEthCalls());
+  const currentChain = selectCurrentChain(state.EthereumReducer);
   const subscriptions = state.EthereumReducer.subscriptions;
-  return { totalSupply, subscriptions };
+  return { totalSupply, subscriptions, currentChain };
 };
 
 export default connect(mapStateToProps, null)(Static);

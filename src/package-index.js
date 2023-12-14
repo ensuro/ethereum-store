@@ -14,9 +14,6 @@ let selectUserAddressFn;
 let selectChainIdFn;
 let selectProviderFn;
 
-// Chain
-let envChain;
-
 export function initializeEthereumStore(options) {
   const {
     getEncodedCall,
@@ -29,7 +26,6 @@ export function initializeEthereumStore(options) {
     selectUserAddress,
     selectChainId,
     selectProvider,
-    chain,
   } = options;
 
   getEncodedCallFn = getEncodedCall;
@@ -42,7 +38,6 @@ export function initializeEthereumStore(options) {
   selectUserAddressFn = selectUserAddress;
   selectChainIdFn = selectChainId;
   selectProviderFn = selectProvider;
-  envChain = chain;
 }
 
 export {
@@ -56,5 +51,4 @@ export {
   selectUserAddressFn,
   selectChainIdFn,
   selectProviderFn,
-  envChain,
 };

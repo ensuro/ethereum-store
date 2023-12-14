@@ -36,7 +36,6 @@ import {
   getTxReceiptStatusFn,
   selectChainIdFn,
   selectProviderFn,
-  envChain,
   selectUserAddressFn,
 } from "../../package-index";
 
@@ -88,7 +87,9 @@ async function ethSignerCall(address, abi, method, args, userState) {
 }
 
 export function* makeEthCall({ retry, address, abi, method, args, forceCall, maxAge }) {
-  const key = address + "_" + getEncodedCallFn(address, abi, method, args);
+  const state = yield select((state) => state.EthereumReducer);
+  const rpc = state.currentChain.rpc;
+  const key = address + "_" + getEncodedCallFn(address, abi, method, args, rpc);
   if (forceCall === undefined || forceCall === false) {
     maxAge = maxAge === undefined ? ethereum.defaultMaxAge : maxAge;
     const state = yield select((state) => state.EthereumReducer);
@@ -127,7 +128,7 @@ export function* makeEthTransact({ address, abi, method, args }) {
   const chainId = state.currentChain.id;
   const id = state.chainState[chainId].transacts.length - 1;
   try {
-    if (selectChainIdFn(userState) === envChain.id) {
+    if (selectChainIdFn(userState) === chainId) {
       const response = yield call(_.partial(ethSignerCall, address, abi, method, args, userState));
       yield put({ type: ETH_TRANSACT_QUEUED, id: id, txHash: response.hash });
     }
@@ -165,6 +166,7 @@ export function* listenTransact({ id, txHash, retry }) {
 export function* refreshAllSubscriptionsCalls() {
   const state = yield select((state) => state.EthereumReducer);
   const chainId = state.currentChain.id;
+  const rpc = state.currentChain.rpc;
   const subscriptions = state.chainState[chainId]?.subscriptions;
   const now = new Date().getTime();
   const timestamp = state.timestamp;
@@ -174,7 +176,7 @@ export function* refreshAllSubscriptionsCalls() {
     for (const key in subscriptions) {
       const subscriptionArray = subscriptions[key];
       for (const sub of subscriptionArray) {
-        let key = sub.address + "_" + getEncodedCallFn(sub.address, sub.abi, sub.method, sub.args);
+        let key = sub.address + "_" + getEncodedCallFn(sub.address, sub.abi, sub.method, sub.args, rpc);
         if (!keyArray.has(key)) ethCalls.add(sub);
         keyArray.add(key);
       }

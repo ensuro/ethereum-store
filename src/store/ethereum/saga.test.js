@@ -50,6 +50,7 @@ beforeEach(async () => {
     type: "SET_USER_CURRENT_CHAIN",
     name: "NewChain",
     id: 1234,
+    rpc: "https://foo-rpc.com/",
   });
 });
 
@@ -86,6 +87,7 @@ describe("All the test with provider resolver mock", () => {
       currentChain: {
         id: 1234,
         name: "NewChain",
+        rpc: "https://foo-rpc.com/",
       },
     });
 
@@ -140,6 +142,7 @@ describe("All the test with provider resolver mock", () => {
       currentChain: {
         id: 1234,
         name: "NewChain",
+        rpc: "https://foo-rpc.com/",
       },
     });
 
@@ -205,6 +208,7 @@ describe("All the test with provider resolver mock", () => {
       currentChain: {
         id: 1234,
         name: "NewChain",
+        rpc: "https://foo-rpc.com/",
       },
     });
 
@@ -258,6 +262,7 @@ describe("All the test with provider resolver mock", () => {
       currentChain: {
         id: 1234,
         name: "NewChain",
+        rpc: "https://foo-rpc.com/",
       },
     });
     const now = new Date().getTime();
@@ -302,6 +307,7 @@ describe("All the test with provider resolver mock", () => {
       currentChain: {
         id: 1234,
         name: "NewChain",
+        rpc: "https://foo-rpc.com/",
       },
     });
     await new Promise((r) => setTimeout(r, 0));
@@ -318,12 +324,6 @@ describe("All the test with provider resolver mock", () => {
     const fakeBalanceOf = (fakeUsdcContract.balanceOf = sinon.fake.resolves(ethers.BigNumber.from(78.345678e6)));
     assert.strictEqual(ethers.Contract.callCount, 1);
     const addr = "0x4d68cf31d613070b18e406afd6a42719a62a0785";
-
-    await store.dispatch({
-      type: "SET_USER_CURRENT_CHAIN",
-      name: "NewChain",
-      id: 1234,
-    });
     await store.dispatch({
       type: "ETH_CALL",
       address: currencyAddress,
@@ -348,6 +348,7 @@ describe("All the test with provider resolver mock", () => {
       currentChain: {
         id: 1234,
         name: "NewChain",
+        rpc: "https://foo-rpc.com/",
       },
     });
     await new Promise((r) => setTimeout(r, 0));
@@ -391,6 +392,7 @@ describe("All the test with provider resolver mock", () => {
       currentChain: {
         id: 1234,
         name: "NewChain",
+        rpc: "https://foo-rpc.com/",
       },
     });
     await new Promise((r) => setTimeout(r, 100));
@@ -409,6 +411,7 @@ describe("All the test with provider resolver mock", () => {
       currentChain: {
         id: 1234,
         name: "NewChain",
+        rpc: "https://foo-rpc.com/",
       },
     });
   });
@@ -439,6 +442,7 @@ describe("All the test with provider resolver mock", () => {
       currentChain: {
         id: 1234,
         name: "NewChain",
+        rpc: "https://foo-rpc.com/",
       },
     });
     await new Promise((r) => setTimeout(r, 15));
@@ -458,6 +462,7 @@ describe("All the test with provider resolver mock", () => {
       currentChain: {
         id: 1234,
         name: "NewChain",
+        rpc: "https://foo-rpc.com/",
       },
     });
     sinon.assert.calledTwice(fakeTotalSupply);
@@ -485,14 +490,9 @@ describe("All the test with provider resolver mock", () => {
       getFormatter: contractRegistry.getFormatter,
       getSignerContract: contractRegistry.getSignerContract,
       getTxReceiptStatus: sinon.fake.resolves(txStatus),
-      selectChainId: () => 80001, // just for testing
+      selectChainId: () => 1234, // just for testing
       selectProvider: () => {},
       selectUserAddress: () => "0x4d68Cf31d613070b18E406AFd6A42719a62a0785", // just for testing
-      // just for testing
-      chain: {
-        id: 80001,
-        rpc: "https://matic-mumbai.chainstacklabs.com/",
-      },
     });
 
     assert.strictEqual(ethers.Contract.callCount, 1);
@@ -536,14 +536,9 @@ describe("All the test with provider resolver mock", () => {
       getFormatter: contractRegistry.getFormatter,
       getSignerContract: contractRegistry.getSignerContract,
       getTxReceiptStatus: sinon.fake.resolves(txStatus),
-      selectChainId: () => 80001, // just for testing
+      selectChainId: () => 1234, // just for testing
       selectProvider: () => {},
       selectUserAddress: () => "0x4d68Cf31d613070b18E406AFd6A42719a62a0785", // just for testing
-      // just for testing
-      chain: {
-        id: 80001,
-        rpc: "https://matic-mumbai.chainstacklabs.com/",
-      },
     });
 
     assert.strictEqual(ethers.Contract.callCount, 1);
@@ -586,14 +581,9 @@ describe("All the test with provider resolver mock", () => {
       getFormatter: contractRegistry.getFormatter,
       getSignerContract: contractRegistry.getSignerContract,
       getTxReceiptStatus: sinon.fake.rejects(txStatus),
-      selectChainId: () => 80001, // just for testing
+      selectChainId: () => 1234, // just for testing
       selectProvider: () => {},
       selectUserAddress: () => "0x4d68Cf31d613070b18E406AFd6A42719a62a0785", // just for testing
-      // just for testing
-      chain: {
-        id: 80001,
-        rpc: "https://matic-mumbai.chainstacklabs.com/",
-      },
     });
 
     assert.strictEqual(ethers.Contract.callCount, 1);
@@ -663,11 +653,6 @@ describe("All the test with provider resolver mock", () => {
   test("ETH_PLAIN_SIGN with message", async () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     await store.dispatch({
-      type: "SET_USER_CURRENT_CHAIN",
-      name: "NewChain",
-      id: 1234,
-    });
-    await store.dispatch({
       type: "ETH_PLAIN_SIGN",
       message: "Simple example of plain text",
       userAddress: userAddr,
@@ -686,11 +671,7 @@ describe("All the test with provider resolver mock", () => {
   test("ETH_SIWE_SIGN resolves", async () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const whitelistAddr = "0x99b2949F4b12bF14F9AD66De374Cd5A2BF6a0C15";
-    await store.dispatch({
-      type: "SET_USER_CURRENT_CHAIN",
-      name: "NewChain",
-      id: 1234,
-    });
+
     await store.dispatch({
       type: "ETH_SIWE_SIGN",
       userAddress: userAddr,
@@ -716,15 +697,10 @@ describe("All the test with provider resolver mock", () => {
     const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
     fakeUsdcContract.nonces = sinon.fake.resolves(2);
-    await store.dispatch({
-      type: "SET_USER_CURRENT_CHAIN",
-      name: "NewChain",
-      id: 1234,
-    });
     const usdcDomain = {
       name: "USDC",
       version: "1",
-      chainId: 8001,
+      chainId: 80001,
       verifyingContract: currencyAddress,
     };
 
@@ -768,15 +744,10 @@ describe("All the test with provider resolver mock", () => {
     const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
     fakeUsdcContract.nonces = sinon.fake.resolves(BigNumber.from(2));
-    await store.dispatch({
-      type: "SET_USER_CURRENT_CHAIN",
-      name: "NewChain",
-      id: 1234,
-    });
     const usdcDomain = {
       name: "USDC",
       version: "1",
-      chainId: 8001,
+      chainId: 80001,
       verifyingContract: currencyAddress,
     };
 
@@ -857,15 +828,10 @@ describe("All the test with provider resolver mock", () => {
     const secondSpender = "0x329731D4FB96Ec52039e222bC4cC67a86b582A86";
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
     fakeUsdcContract.nonces = sinon.fake.resolves(BigNumber.from(2));
-    await store.dispatch({
-      type: "SET_USER_CURRENT_CHAIN",
-      name: "NewChain",
-      id: 1234,
-    });
     const usdcDomain = {
       name: "USDC",
       version: "1",
-      chainId: 8001,
+      chainId: 80001,
       verifyingContract: currencyAddress,
     };
 
@@ -971,17 +937,12 @@ describe("All the tests with provider REJECTED Mock", () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
-    await store.dispatch({
-      type: "SET_USER_CURRENT_CHAIN",
-      name: "NewChain",
-      id: 1234,
-    });
     fakeUsdcContract.nonces = sinon.fake.resolves(2);
 
     const usdcDomain = {
       name: "USDC",
       version: "1",
-      chainId: 8001,
+      chainId: 80001,
       verifyingContract: currencyAddress,
     };
 
@@ -1025,11 +986,6 @@ describe("All the tests with provider REJECTED Mock", () => {
   test("Rejects ETH_PLAIN_SIGN with message", async () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     await store.dispatch({
-      type: "SET_USER_CURRENT_CHAIN",
-      name: "NewChain",
-      id: 1234,
-    });
-    await store.dispatch({
       type: "ETH_PLAIN_SIGN",
       message: "Simple example of plain text",
       userAddress: userAddr,
@@ -1047,11 +1003,6 @@ describe("All the tests with provider REJECTED Mock", () => {
   test("Rejects ETH_SIWE_SIGN", async () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const whitelistAddr = "0x99b2949F4b12bF14F9AD66De374Cd5A2BF6a0C15";
-    await store.dispatch({
-      type: "SET_USER_CURRENT_CHAIN",
-      name: "NewChain",
-      id: 1234,
-    });
     await store.dispatch({
       type: "ETH_SIWE_SIGN",
       userAddress: userAddr,
