@@ -29,7 +29,7 @@ import {
 const { ethers } = require("ethers");
 const INIT_STATE = {
   timestamp: 0,
-  currentChain: { name: "", id: -1, rpc: "" },
+  currentChain: { name: "Mumbai", id: 80001, rpc: "https://rpc.ankr.com/polygon_mumbai" },
   chainState: {
     /*
      * <chainId>: {
