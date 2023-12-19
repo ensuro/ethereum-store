@@ -214,7 +214,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_EIP_712_SIGN:
       chainId = state.currentChain.id;
-      const eipKey = ethers.utils._TypedDataEncoder.encode(action.domain, action.types, action.value);
+      const eipKey = ethers.TypedDataEncoder.encode(action.domain, action.types, action.value);
 
       let eip712 = getChainStateByKey(state, "eipSigns", chainId);
       eip712[chainId].eipSigns[eipKey] = { state: "PENDING" };

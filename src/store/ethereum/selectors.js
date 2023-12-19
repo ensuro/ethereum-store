@@ -102,16 +102,16 @@ export const selectEthSiweSign = createSelector(
 export const selectBiggerSign = createSelector(
   [getChainStateEIPSigns, (__, addr, nonce, spender) => ({ addr, nonce, spender })],
   (signs, params) => {
-    const userAddr = ethers.utils.getAddress(params.addr);
+    const userAddr = ethers.getAddress(params.addr);
     const nonce = params.nonce;
-    const spenderAddr = params.spender ? ethers.utils.getAddress(params.spender) : "";
+    const spenderAddr = params.spender ? ethers.getAddress(params.spender) : "";
     const filteredSigns = Object.keys(signs).filter((sign) => {
       return (
         signs[sign].state === "SIGNED" &&
-        userAddr === ethers.utils.getAddress(signs[sign].userAddress) &&
-        signs[sign].value.nonce.eq(nonce) &&
+        userAddr === ethers.getAddress(signs[sign].userAddress) &&
+        signs[sign].value.nonce === nonce &&
         spenderAddr &&
-        spenderAddr === ethers.utils.getAddress(signs[sign].value.spender)
+        spenderAddr === ethers.getAddress(signs[sign].value.spender)
       );
     });
     const sortedSigns = filteredSigns.sort((s1, s2) => {

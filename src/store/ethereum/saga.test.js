@@ -18,7 +18,7 @@ import {
 import { ethereum } from "../../config";
 
 const sinon = require("sinon");
-const { ethers, BigNumber } = require("ethers");
+const { ethers } = require("ethers");
 
 let contractMock;
 let providerMock;
@@ -62,11 +62,11 @@ afterEach(() => {
 describe("All the test with provider resolver mock", () => {
   beforeEach(() => {
     providerMock = sinon.spy(mock_helper.mockProviderFn());
-    sinon.replaceGetter(ethers.providers, "Web3Provider", () => providerMock);
+    sinon.replaceGetter(ethers, "BrowserProvider", () => providerMock);
   });
 
   test("ETH_ADD_SUBSCRIPTION and ETH_DISPATCH_CLOCK with one ethCall", async () => {
-    const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(ethers.BigNumber.from(12.345e6)));
+    const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(12.345e6));
     assert.strictEqual(ethers.Contract.callCount, 1);
 
     await store.dispatch({
@@ -114,7 +114,7 @@ describe("All the test with provider resolver mock", () => {
   });
 
   test("ETH_ADD_SUBSCRIPTION and ETH_DISPATCH_CLOCK with two ethCall", async () => {
-    const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(ethers.BigNumber.from(12.345e6)));
+    const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(12.345e6));
     const fakeName = (fakeUsdcContract.name = sinon.fake.resolves("Peso"));
     assert.strictEqual(ethers.Contract.callCount, 1);
 
@@ -180,7 +180,7 @@ describe("All the test with provider resolver mock", () => {
   });
 
   test("Only ONE call with TWO subscritions to the SAME METHOD", async () => {
-    const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(ethers.BigNumber.from(12.345e6)));
+    const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(12.345e6));
     assert.strictEqual(ethers.Contract.callCount, 1);
 
     await store.dispatch({
@@ -233,7 +233,7 @@ describe("All the test with provider resolver mock", () => {
   });
 
   test("ETH_CALL with simple method", async () => {
-    const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(ethers.BigNumber.from(12.345e6)));
+    const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(12.345e6));
     assert.strictEqual(ethers.Contract.callCount, 1);
 
     await store.dispatch({
@@ -321,7 +321,7 @@ describe("All the test with provider resolver mock", () => {
   });
 
   test("ETH_CALL method with parameter", async () => {
-    const fakeBalanceOf = (fakeUsdcContract.balanceOf = sinon.fake.resolves(ethers.BigNumber.from(78.345678e6)));
+    const fakeBalanceOf = (fakeUsdcContract.balanceOf = sinon.fake.resolves(78.345678e6));
     assert.strictEqual(ethers.Contract.callCount, 1);
     const addr = "0x4d68cf31d613070b18e406afd6a42719a62a0785";
     await store.dispatch({
@@ -446,7 +446,7 @@ describe("All the test with provider resolver mock", () => {
       },
     });
     await new Promise((r) => setTimeout(r, 15));
-    fakeUsdcContract.totalSupply = sinon.fake.resolves(ethers.BigNumber.from(123.2e6));
+    fakeUsdcContract.totalSupply = sinon.fake.resolves(123.2e6);
     assert.deepStrictEqual(store.getState().EthereumReducer, {
       timestamp: 0,
       chainState: {
@@ -479,9 +479,7 @@ describe("All the test with provider resolver mock", () => {
     const txHash = "0x000001";
     const txStatus = 1; // 1 == "success"
     const fakeApprove = (fakeUsdcContract.approve = sinon.fake.resolves({ hash: txHash })); //TxHash
-    const fakeEstimateGas = (fakeUsdcContract["estimateGas"] = {
-      approve: sinon.fake.resolves(BigNumber.from(100000)),
-    });
+    const fakeEstimateGas = (fakeUsdcContract.approve["estimateGas"] = sinon.fake.resolves(100000n));
     /* Mocking tx receipt function and initialize saga */
     initializeEthereumStore({
       getEncodedCall: contractRegistry.getEncodedCall,
@@ -502,7 +500,7 @@ describe("All the test with provider resolver mock", () => {
       address: currencyAddress,
       abi: "ERC20Permit",
       method: "approve",
-      args: ["0x01", ethers.BigNumber.from(10)],
+      args: ["0x01", 10],
     });
 
     const id = store.getState().EthereumReducer.chainState["1234"].transacts.length - 1;
@@ -514,7 +512,7 @@ describe("All the test with provider resolver mock", () => {
     await new Promise((r) => setTimeout(r, 1000));
 
     sinon.assert.callCount(fakeApprove, 1);
-    sinon.assert.callCount(fakeEstimateGas["approve"], 1);
+    sinon.assert.callCount(fakeEstimateGas, 1);
 
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].state, "MINED");
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].txHash, txHash);
@@ -524,9 +522,7 @@ describe("All the test with provider resolver mock", () => {
     const txHash = "0x000001";
     const txStatus = 0; // 0 == reverted
     const fakeApprove = (fakeUsdcContract.approve = sinon.fake.resolves({ hash: txHash })); //TxHash
-    const fakeEstimateGas = (fakeUsdcContract["estimateGas"] = {
-      approve: sinon.fake.resolves(BigNumber.from(100000)),
-    });
+    const fakeEstimateGas = (fakeUsdcContract.approve["estimateGas"] = sinon.fake.resolves(100000n));
 
     /* Mocking tx receipt function and initialize saga */
     initializeEthereumStore({
@@ -548,7 +544,7 @@ describe("All the test with provider resolver mock", () => {
       address: currencyAddress,
       abi: "ERC20Permit",
       method: "approve",
-      args: ["0x01", ethers.BigNumber.from(10)],
+      args: ["0x01", 10],
     });
 
     const id = store.getState().EthereumReducer.chainState["1234"].transacts.length - 1;
@@ -560,7 +556,7 @@ describe("All the test with provider resolver mock", () => {
     await new Promise((r) => setTimeout(r, 1001));
 
     sinon.assert.callCount(fakeApprove, 1);
-    sinon.assert.callCount(fakeEstimateGas["approve"], 1);
+    sinon.assert.callCount(fakeEstimateGas, 1);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].state, "REVERTED");
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].txHash, txHash);
   });
@@ -569,9 +565,7 @@ describe("All the test with provider resolver mock", () => {
     const txHash = "0x000001";
     const txStatus = 0; // 0 == reverted
     const fakeApprove = (fakeUsdcContract.approve = sinon.fake.resolves({ hash: txHash })); //TxHash
-    const fakeEstimateGas = (fakeUsdcContract["estimateGas"] = {
-      approve: sinon.fake.resolves(BigNumber.from(100000)),
-    });
+    const fakeEstimateGas = (fakeUsdcContract.approve["estimateGas"] = sinon.fake.resolves(100000n));
 
     /* Mocking tx receipt function and initialize saga */
     initializeEthereumStore({
@@ -593,7 +587,7 @@ describe("All the test with provider resolver mock", () => {
       address: currencyAddress,
       abi: "ERC20Permit",
       method: "approve",
-      args: ["0x01", ethers.BigNumber.from(10)],
+      args: ["0x01", 10],
     });
 
     const id = store.getState().EthereumReducer.chainState["1234"].transacts.length - 1;
@@ -605,13 +599,13 @@ describe("All the test with provider resolver mock", () => {
     await new Promise((r) => setTimeout(r, 1001));
 
     sinon.assert.callCount(fakeApprove, 1);
-    sinon.assert.callCount(fakeEstimateGas["approve"], 1);
+    sinon.assert.callCount(fakeEstimateGas, 1);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].state, "REJECTED");
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].txHash, txHash);
   });
 
   test("ETH_CALL method with timestamp", async () => {
-    fakeUsdcContract.totalSupply = sinon.fake.resolves(ethers.BigNumber.from(12.345e6));
+    fakeUsdcContract.totalSupply = sinon.fake.resolves(12.345e6);
     assert.strictEqual(ethers.Contract.callCount, 1);
     await store.dispatch({
       type: "ETH_CALL",
@@ -715,9 +709,9 @@ describe("All the test with provider resolver mock", () => {
     };
 
     const value = {
-      owner: ethers.utils.getAddress(userAddr),
-      spender: ethers.utils.getAddress(spenderAddr),
-      value: ethers.BigNumber.from(100e6),
+      owner: ethers.getAddress(userAddr),
+      spender: ethers.getAddress(spenderAddr),
+      value: 100e6,
       nonce: await fakeUsdcContract.nonces(userAddr),
       deadline: deadline,
     };
@@ -729,7 +723,7 @@ describe("All the test with provider resolver mock", () => {
       value: value,
     });
 
-    const key = ethers.utils._TypedDataEncoder.encode(usdcDomain, types, value);
+    const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key].state, "PENDING");
 
     await new Promise((r) => setTimeout(r, 0));
@@ -743,7 +737,7 @@ describe("All the test with provider resolver mock", () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
-    fakeUsdcContract.nonces = sinon.fake.resolves(BigNumber.from(2));
+    fakeUsdcContract.nonces = sinon.fake.resolves(2);
     const usdcDomain = {
       name: "USDC",
       version: "1",
@@ -762,9 +756,9 @@ describe("All the test with provider resolver mock", () => {
     };
 
     let value = {
-      owner: ethers.utils.getAddress(userAddr),
-      spender: ethers.utils.getAddress(spenderAddr),
-      value: ethers.BigNumber.from(100e6),
+      owner: ethers.getAddress(userAddr),
+      spender: ethers.getAddress(spenderAddr),
+      value: 100e6,
       nonce: await fakeUsdcContract.nonces(userAddr),
       deadline: deadline,
     };
@@ -776,7 +770,7 @@ describe("All the test with provider resolver mock", () => {
       value: value,
     });
 
-    const key = ethers.utils._TypedDataEncoder.encode(usdcDomain, types, value);
+    const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key].state, "PENDING");
 
     await new Promise((r) => setTimeout(r, 0));
@@ -786,9 +780,9 @@ describe("All the test with provider resolver mock", () => {
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key].value, value);
 
     value = {
-      owner: ethers.utils.getAddress(userAddr),
-      spender: ethers.utils.getAddress(spenderAddr),
-      value: ethers.BigNumber.from(200e6),
+      owner: ethers.getAddress(userAddr),
+      spender: ethers.getAddress(spenderAddr),
+      value: 200e6,
       nonce: await fakeUsdcContract.nonces(userAddr),
       deadline: deadline,
     };
@@ -800,7 +794,7 @@ describe("All the test with provider resolver mock", () => {
       value: value,
     });
 
-    const key2 = ethers.utils._TypedDataEncoder.encode(usdcDomain, types, value);
+    const key2 = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key2].state, "PENDING");
 
     await new Promise((r) => setTimeout(r, 0));
@@ -827,7 +821,7 @@ describe("All the test with provider resolver mock", () => {
     const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
     const secondSpender = "0x329731D4FB96Ec52039e222bC4cC67a86b582A86";
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
-    fakeUsdcContract.nonces = sinon.fake.resolves(BigNumber.from(2));
+    fakeUsdcContract.nonces = sinon.fake.resolves(2);
     const usdcDomain = {
       name: "USDC",
       version: "1",
@@ -846,9 +840,9 @@ describe("All the test with provider resolver mock", () => {
     };
 
     let value = {
-      owner: ethers.utils.getAddress(userAddr),
-      spender: ethers.utils.getAddress(spenderAddr),
-      value: ethers.BigNumber.from(100e6),
+      owner: ethers.getAddress(userAddr),
+      spender: ethers.getAddress(spenderAddr),
+      value: 100e6,
       nonce: await fakeUsdcContract.nonces(userAddr),
       deadline: deadline,
     };
@@ -860,7 +854,7 @@ describe("All the test with provider resolver mock", () => {
       value: value,
     });
 
-    const key = ethers.utils._TypedDataEncoder.encode(usdcDomain, types, value);
+    const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key].state, "PENDING");
 
     await new Promise((r) => setTimeout(r, 0));
@@ -870,14 +864,14 @@ describe("All the test with provider resolver mock", () => {
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key].value, value);
     assert.deepStrictEqual(
       store.getState().EthereumReducer.chainState["1234"].eipSigns[key].value.spender,
-      ethers.utils.getAddress(spenderAddr)
+      ethers.getAddress(spenderAddr)
     );
 
     // second spender
     value = {
-      owner: ethers.utils.getAddress(userAddr),
-      spender: ethers.utils.getAddress(secondSpender),
-      value: ethers.BigNumber.from(200e6),
+      owner: ethers.getAddress(userAddr),
+      spender: ethers.getAddress(secondSpender),
+      value: 200e6,
       nonce: await fakeUsdcContract.nonces(userAddr),
       deadline: deadline,
     };
@@ -889,7 +883,7 @@ describe("All the test with provider resolver mock", () => {
       value: value,
     });
 
-    const key2 = ethers.utils._TypedDataEncoder.encode(usdcDomain, types, value);
+    const key2 = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key2].state, "PENDING");
 
     await new Promise((r) => setTimeout(r, 0));
@@ -902,7 +896,7 @@ describe("All the test with provider resolver mock", () => {
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key2].value, value);
     assert.deepStrictEqual(
       store.getState().EthereumReducer.chainState["1234"].eipSigns[key2].value.spender,
-      ethers.utils.getAddress(secondSpender)
+      ethers.getAddress(secondSpender)
     );
 
     let biggerSign = selectBiggerSign(
@@ -930,7 +924,7 @@ describe("All the test with provider resolver mock", () => {
 describe("All the tests with provider REJECTED Mock", () => {
   beforeEach(() => {
     let rejectedMock = sinon.spy(mock_helper.mockProviderRejectsFn());
-    sinon.replaceGetter(ethers.providers, "Web3Provider", () => rejectedMock);
+    sinon.replaceGetter(ethers, "BrowserProvider", () => rejectedMock);
   });
 
   test("Rejects eip712 message ETH_EIP_712_SIGN", async () => {
@@ -957,9 +951,9 @@ describe("All the tests with provider REJECTED Mock", () => {
     };
 
     const value = {
-      owner: ethers.utils.getAddress(userAddr),
-      spender: ethers.utils.getAddress(spenderAddr),
-      value: ethers.BigNumber.from(100e6),
+      owner: ethers.getAddress(userAddr),
+      spender: ethers.getAddress(spenderAddr),
+      value: 100e6,
       nonce: await fakeUsdcContract.nonces(userAddr),
       deadline: deadline,
     };
@@ -971,7 +965,7 @@ describe("All the tests with provider REJECTED Mock", () => {
       value: value,
     });
 
-    const key = ethers.utils._TypedDataEncoder.encode(usdcDomain, types, value);
+    const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key].state, "PENDING");
 
     await new Promise((r) => setTimeout(r, 0));

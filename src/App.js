@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import { Switch, BrowserRouter as Router } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { useDispatch } from "react-redux";
 // Import Routes all
 import { userRoutes } from "./routes/allRoutes";
-import Middleware from "./routes/middleware/Middleware";
 
 function App() {
   let dispatch = useDispatch();
@@ -27,13 +26,11 @@ function App() {
 
   return (
     <React.Fragment>
-      <Router>
-        <Switch>
-          {userRoutes.map((route, idx) => (
-            <Middleware path={route.path} component={route.component} key={idx} exact />
-          ))}
-        </Switch>
-      </Router>
+      <Routes>
+        {userRoutes.map((route) => (
+          <Route path={route.path} key={route.path} element={<route.component />} />
+        ))}
+      </Routes>
     </React.Fragment>
   );
 }

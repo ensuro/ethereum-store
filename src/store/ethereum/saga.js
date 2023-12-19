@@ -42,14 +42,14 @@ import {
 const { ethers } = require("ethers");
 
 async function signMessageTyped(userState, domain, types, value) {
-  const provider = new ethers.providers.Web3Provider(selectProviderFn(userState), "any");
+  const provider = new ethers.BrowserProvider(selectProviderFn(userState), "any");
   const signer = await provider.getSigner();
-  const signatureHash = await signer._signTypedData(domain, types, value);
+  const signatureHash = await signer.signTypedData(domain, types, value);
   return signatureHash;
 }
 
 async function signMessage(userState, address, message) {
-  const provider = new ethers.providers.Web3Provider(selectProviderFn(userState), "any");
+  const provider = new ethers.BrowserProvider(selectProviderFn(userState), "any");
   const signer = await provider.getSigner();
   const signatureHash = await signer.signMessage(message);
   return signatureHash;
@@ -76,14 +76,15 @@ async function ethCall(address, abi, method, args) {
 }
 
 async function ethSignerCall(address, abi, method, args, userState) {
-  let provider = new ethers.providers.Web3Provider(selectProviderFn(userState), "any");
-  let contract = getSignerContractFn(address, abi, provider);
-  const estimatedGas = await contract["estimateGas"][method](...args).then((gas) => {
+  let provider = new ethers.BrowserProvider(selectProviderFn(userState), "any");
+  let contract = await getSignerContractFn(address, abi, provider);
+  const estimatedGas = await contract[method].estimateGas(...args).then((gas) => {
     return gas;
   });
 
   args = args || [];
-  return await contract[method](...args, { gasLimit: estimatedGas.mul(gas.increase).div(100) });
+  const gasLimit = (estimatedGas * ethers.toBigInt(gas.increase)) / 100n;
+  return await contract[method](...args, { gasLimit: gasLimit });
 }
 
 export function* makeEthCall({ retry, address, abi, method, args, forceCall, maxAge }) {
@@ -142,7 +143,7 @@ export function* makeEthTransact({ address, abi, method, args }) {
 export function* listenTransact({ id, txHash, retry }) {
   let response;
   const userState = yield select((state) => state.UserReducer);
-  let provider = new ethers.providers.Web3Provider(selectProviderFn(userState), "any");
+  let provider = new ethers.BrowserProvider(selectProviderFn(userState), "any");
   try {
     yield delay(ethereum.retry.timeout * 10);
     if (!retry || retry < ethereum.retry.transactCount) {
@@ -206,7 +207,7 @@ export function* makeEthEipSign({ domain, types, value }) {
     const signatureHash = yield call(signMessageTyped, userState, domain, types, value);
     yield put({
       type: ETH_EIP_712_SIGN_PROCESSED,
-      key: ethers.utils._TypedDataEncoder.encode(domain, types, value),
+      key: ethers.TypedDataEncoder.encode(domain, types, value),
       userAddress: addr,
       signature: signatureHash,
       domain: domain,
@@ -216,7 +217,7 @@ export function* makeEthEipSign({ domain, types, value }) {
   } catch (error) {
     yield put({
       type: ETH_EIP_712_SIGN_FAILED,
-      key: ethers.utils._TypedDataEncoder.encode(domain, types, value),
+      key: ethers.TypedDataEncoder.encode(domain, types, value),
       userAddress: addr,
       payload: error.message,
     });
@@ -225,7 +226,7 @@ export function* makeEthEipSign({ domain, types, value }) {
 
 export function* makeEthSiweSign({ message, userAddress, email, country, occupation, whitelist }) {
   const userState = yield select((state) => state.UserReducer);
-  const addr = ethers.utils.getAddress(userAddress);
+  const addr = ethers.getAddress(userAddress);
   try {
     const signatureHash = yield call(signMessage, userState, addr, message);
     yield put({
@@ -245,7 +246,7 @@ export function* makeEthSiweSign({ message, userAddress, email, country, occupat
 
 export function* makeSign({ message, userAddress }) {
   const userState = yield select((state) => state.UserReducer);
-  const addr = ethers.utils.getAddress(userAddress);
+  const addr = ethers.getAddress(userAddress);
   try {
     const signatureHash = yield call(signMessage, userState, addr, message);
     yield put({
