@@ -919,6 +919,100 @@ describe("All the test with provider resolver mock", () => {
     );
     assert.deepStrictEqual(biggerSign, undefined);
   });
+
+  test("ETH_CALL, change Chain and ETH_CALL again", async () => {
+    const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(12.345e6));
+    const fakeName = (fakeUsdcContract.name = sinon.fake.resolves("FakeUSDC"));
+    assert.strictEqual(ethers.Contract.callCount, 1);
+
+    await store.dispatch({
+      type: "ETH_CALL",
+      address: currencyAddress,
+      abi: "ERC20Permit",
+      method: "totalSupply",
+    });
+    assert.strictEqual(
+      selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply"),
+      undefined
+    );
+    assert.strictEqual(ethers.Contract.callCount, 1);
+    const call_key = currencyAddress + "_0x18160ddd"; // "18160ddd" == kekac256("totalSupply()")
+    assert.deepStrictEqual(store.getState().EthereumReducer, {
+      timestamp: 0,
+      chainState: {
+        1234: {
+          calls: {
+            [call_key]: {
+              state: "LOADING",
+            },
+          },
+        },
+      },
+      currentChain: {
+        id: 1234,
+        name: "NewChain",
+        rpc: "https://foo-rpc.com/",
+      },
+    });
+    const now = new Date().getTime();
+    await new Promise((r) => setTimeout(r, 0));
+    let ethStore = store.getState().EthereumReducer;
+    assert.deepEqual(ethStore.chainState["1234"].calls, {
+      [call_key]: {
+        state: "LOADED",
+        value: Big(12.345),
+      },
+    });
+    assert(now - ethStore.chainState["1234"].call_metadata[call_key].timestamp < 100);
+    sinon.assert.calledOnce(fakeTotalSupply);
+    assert.ok(
+      selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply").eq(Big(12.345))
+    );
+
+    store.dispatch({
+      type: "SET_USER_CURRENT_CHAIN",
+      name: "SecondChain",
+      id: 5678,
+      rpc: "https://foo-rpc.com/",
+    });
+
+    ethStore = store.getState().EthereumReducer;
+    assert.deepEqual(ethStore.currentChain, {
+      id: 5678,
+      name: "SecondChain",
+      rpc: "https://foo-rpc.com/",
+    });
+
+    await store.dispatch({
+      type: "ETH_CALL",
+      address: currencyAddress,
+      abi: "ERC20Permit",
+      method: "name",
+    });
+    assert.strictEqual(
+      selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "name"),
+      undefined
+    );
+    const call_key_2 = currencyAddress + "_0x06fdde03"; // "06fdde03" == kekac256("name()")
+    await new Promise((r) => setTimeout(r, 0));
+
+    ethStore = store.getState().EthereumReducer;
+    assert.deepEqual(ethStore.chainState["1234"].calls, {
+      [call_key]: {
+        state: "LOADED",
+        value: Big(12.345),
+      },
+    });
+    assert.deepEqual(ethStore.chainState["5678"].calls, {
+      [call_key_2]: {
+        state: "LOADED",
+        value: "FakeUSDC",
+      },
+    });
+
+    sinon.assert.calledOnce(fakeTotalSupply);
+    sinon.assert.calledOnce(fakeName);
+  });
 });
 
 describe("All the tests with provider REJECTED Mock", () => {
