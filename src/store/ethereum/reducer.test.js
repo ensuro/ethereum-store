@@ -639,6 +639,52 @@ describe("Ethereum Reducer tests", () => {
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
   });
 
+  it("The ETH_EIP_712_SIGN failed", () => {
+    const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
+    const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
+    const types = {
+      Permit: [
+        { name: "owner", type: "address" },
+        { name: "spender", type: "address" },
+        { name: "value", type: "uint256" },
+        { name: "nonce", type: "uint256" },
+        { name: "deadline", type: "uint256" },
+      ],
+    };
+    const value = {
+      owner: ethers.getAddress(userAddr),
+      spender: ethers.getAddress(spenderAddr),
+      value: 100e6,
+      nonce: 10,
+      deadline: deadline,
+    };
+    const usdcDomain = { name: "USDC", version: "1", chainId: 80001, verifyingContract: currencyAddress };
+    const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
+    const initialState = { ...state, chainState: { 80001: { eipSigns: { [key]: { state: "PENDING" } } } } };
+    const action = {
+      type: "ETH_EIP_712_SIGN_FAILED",
+      key: key,
+      userAddress: ethers.getAddress(userAddr),
+      payload: "error processing the sign",
+    };
+    const expectedState = {
+      ...state,
+      chainState: {
+        80001: {
+          eipSigns: {
+            [key]: {
+              state: "ERROR",
+              error: "error processing the sign",
+              userAddress: ethers.getAddress(userAddr),
+            },
+          },
+        },
+      },
+    };
+    expect(EthereumReducer(initialState, action)).toEqual(expectedState);
+  });
+
   it("Should add one ETH_PLAIN_SIGN", () => {
     const initialState = { ...state, chainState: { 80001: { signs: {} } } };
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
