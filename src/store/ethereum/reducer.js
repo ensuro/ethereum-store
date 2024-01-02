@@ -55,13 +55,6 @@ const INIT_STATE = {
   },
 };
 
-const getChainStateByKey = (state, key, chainId) => {
-  let ret = { ...state.chainState };
-  ret[chainId] = { ...(ret[chainId] || {}) };
-  ret[chainId][key] = { ...(ret[chainId][key] || {}) };
-  return ret;
-};
-
 const getChainStateTransacts = (state, chainId) => {
   let ret = { ...state.chainState };
   ret[chainId] = { ...(ret[chainId] || {}) };
@@ -83,13 +76,15 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       chainId = state.currentChain.id;
       let rpc = state.currentChain.rpc;
       let key = action.address + "_" + getEncodedCallFn(action.address, action.abi, action.method, action.args, rpc);
-      let calls = getChainStateByKey(state, "calls", chainId);
-      calls[chainId].calls[key] = { ...(calls[chainId].calls[key] || {}) };
-      if (calls[chainId].calls[key].state !== "LOADED")
-        calls[chainId].calls[key].state =
-          calls[chainId].calls[key].state !== "LOADED" ? "LOADING" : calls[chainId].calls[key].state;
-      if (action.retry !== undefined) calls[chainId].calls[key].retries = action.retry;
-      state = { ...state, chainState: calls };
+      state = modifyNode(state, ["chainState", chainId, "calls", key], (x) => {
+        return { ...(x || {}) };
+      });
+      state = modifyNode(state, ["chainState", chainId, "calls", key, "state"], (x) => {
+        return x !== "LOADED" ? "LOADING" : x;
+      });
+      if (action.retry !== undefined) {
+        state = modifyNode(state, ["chainState", chainId, "calls", key, "retries"], () => action.retry);
+      }
       break;
 
     case ETH_CALL_SUCCESS:
