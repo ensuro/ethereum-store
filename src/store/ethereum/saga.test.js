@@ -14,6 +14,7 @@ import {
   selectEthCallTimestampByKey,
   selectSign,
   selectEthSiweSign,
+  selectLastTransact,
 } from "./selectors";
 import { ethereum } from "../../config";
 
@@ -507,15 +508,18 @@ describe("All the test with provider resolver mock", () => {
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].method, "approve");
     await new Promise((r) => setTimeout(r, 0));
 
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].state, "QUEUED");
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].txHash, txHash);
+    let lastTx = selectLastTransact(store.getState().EthereumReducer);
+    assert.deepStrictEqual(lastTx.state, "QUEUED");
+    assert.deepStrictEqual(lastTx.txHash, txHash);
     await new Promise((r) => setTimeout(r, 1000));
 
     sinon.assert.callCount(fakeApprove, 1);
     sinon.assert.callCount(fakeEstimateGas, 1);
 
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].state, "MINED");
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].txHash, txHash);
+    lastTx = selectLastTransact(store.getState().EthereumReducer);
+
+    assert.deepStrictEqual(lastTx.state, "MINED");
+    assert.deepStrictEqual(lastTx.txHash, txHash);
   });
 
   test("ETH_TRANSACT reverted", async () => {
@@ -547,18 +551,20 @@ describe("All the test with provider resolver mock", () => {
       args: ["0x01", 10],
     });
 
-    const id = store.getState().EthereumReducer.chainState["1234"].transacts.length - 1;
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].method, "approve");
+    let lastTx = selectLastTransact(store.getState().EthereumReducer);
+    assert.deepStrictEqual(lastTx.method, "approve");
     await new Promise((r) => setTimeout(r, 0));
 
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].state, "QUEUED");
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].txHash, txHash);
+    lastTx = selectLastTransact(store.getState().EthereumReducer);
+    assert.deepStrictEqual(lastTx.state, "QUEUED");
+    assert.deepStrictEqual(lastTx.txHash, txHash);
     await new Promise((r) => setTimeout(r, 1001));
 
+    lastTx = selectLastTransact(store.getState().EthereumReducer);
     sinon.assert.callCount(fakeApprove, 1);
     sinon.assert.callCount(fakeEstimateGas, 1);
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].state, "REVERTED");
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].txHash, txHash);
+    assert.deepStrictEqual(lastTx.state, "REVERTED");
+    assert.deepStrictEqual(lastTx.txHash, txHash);
   });
 
   test("ETH_TRANSACT rejected", async () => {
@@ -590,18 +596,20 @@ describe("All the test with provider resolver mock", () => {
       args: ["0x01", 10],
     });
 
-    const id = store.getState().EthereumReducer.chainState["1234"].transacts.length - 1;
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].method, "approve");
+    let lastTx = selectLastTransact(store.getState().EthereumReducer);
+    assert.deepStrictEqual(lastTx.method, "approve");
     await new Promise((r) => setTimeout(r, 0));
 
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].state, "QUEUED");
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].txHash, txHash);
+    lastTx = selectLastTransact(store.getState().EthereumReducer);
+    assert.deepStrictEqual(lastTx.state, "QUEUED");
+    assert.deepStrictEqual(lastTx.txHash, txHash);
     await new Promise((r) => setTimeout(r, 1001));
 
+    lastTx = selectLastTransact(store.getState().EthereumReducer);
     sinon.assert.callCount(fakeApprove, 1);
     sinon.assert.callCount(fakeEstimateGas, 1);
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].state, "REJECTED");
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].transacts[id].txHash, txHash);
+    assert.deepStrictEqual(lastTx.state, "REJECTED");
+    assert.deepStrictEqual(lastTx.txHash, txHash);
   });
 
   test("ETH_CALL method with timestamp", async () => {
