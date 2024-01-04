@@ -46,7 +46,7 @@ export const mockProviderFn = () => {
   ret._defaultProvider = {
     getSigner: sinon.fake.resolves({
       signMessage: () => "0x1234567890",
-      _signTypedData: () => "0x0987654321",
+      signTypedData: () => "0x0987654321",
     }),
   }; // Default provider
   ret.default = (provider) => {
@@ -63,7 +63,7 @@ export const mockProviderRejectsFn = () => {
   ret._defaultProvider = {
     getSigner: sinon.fake.resolves({
       signMessage: sinon.fake.rejects("Error signing message"),
-      _signTypedData: sinon.fake.rejects("Error signing typed message"),
+      signTypedData: sinon.fake.rejects("Error signing typed message"),
     }),
   }; // Default provider
   ret.default = (provider) => {

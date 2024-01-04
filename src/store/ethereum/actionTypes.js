@@ -82,3 +82,5 @@ export const ETH_PLAIN_SIGN_FAILED = "ETH_PLAIN_SIGN_FAILED";
  * {type: ETH_PLAIN_SIGN_PROCESSED, key: userAddress, signature: "0x1234...", message: "message to sign"}
  * {type: ETH_PLAIN_SIGN_FAILED, key: userAddress, payload: error.message  }
  */
+
+export const SET_USER_CURRENT_CHAIN = "SET_USER_CURRENT_CHAIN";
