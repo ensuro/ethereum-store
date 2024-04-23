@@ -1,6 +1,6 @@
 {
   "name": "ethereum-store",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Ethereum store for react redux",
   "scripts": {
     "prettier": "prettier --write .",
