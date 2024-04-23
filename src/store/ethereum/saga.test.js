@@ -656,15 +656,17 @@ describe("All the test with provider resolver mock", () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     await store.dispatch({
       type: "ETH_PLAIN_SIGN",
+      key: "testPlainSign",
       message: "Simple example of plain text",
       userAddress: userAddr,
     });
 
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].signs[userAddr].state, "PENDING");
+    const key = `testPlainSign_${userAddr}`;
+    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].signs[key].state, "PENDING");
 
     await new Promise((r) => setTimeout(r, 0));
 
-    const sign = selectSign(store.getState().EthereumReducer, [userAddr]);
+    const sign = selectSign(store.getState().EthereumReducer, "testPlainSign", userAddr);
     assert.deepStrictEqual(sign.state, "SIGNED");
     assert.deepStrictEqual(sign.signature, "0x1234567890");
     assert.deepStrictEqual(sign.message, "Simple example of plain text");
@@ -676,6 +678,7 @@ describe("All the test with provider resolver mock", () => {
 
     await store.dispatch({
       type: "ETH_SIWE_SIGN",
+      key: "testSiweKey",
       userAddress: userAddr,
       message: "I accept the Ensuro Terms of Service: https://ensuro.co/Ensuro_ToS.pdf....",
       email: "test@test.com",
@@ -684,11 +687,12 @@ describe("All the test with provider resolver mock", () => {
       whitelist: whitelistAddr,
     });
 
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].siweSigns[userAddr].state, "PENDING");
+    const key = `testSiweKey_${userAddr}`;
+    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].siweSigns[key].state, "PENDING");
 
     await new Promise((r) => setTimeout(r, 0));
 
-    const sign = selectEthSiweSign(store.getState().EthereumReducer, [userAddr]);
+    const sign = selectEthSiweSign(store.getState().EthereumReducer, "testSiweKey", userAddr);
     assert.deepStrictEqual(sign.state, "SIGNED");
     assert.deepStrictEqual(sign.signature, "0x1234567890");
     assert.deepStrictEqual(sign.message, "I accept the Ensuro Terms of Service: https://ensuro.co/Ensuro_ToS.pdf....");
@@ -1083,15 +1087,17 @@ describe("All the tests with provider REJECTED Mock", () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     await store.dispatch({
       type: "ETH_PLAIN_SIGN",
+      key: "testPlainKey",
       message: "Simple example of plain text",
       userAddress: userAddr,
     });
 
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].signs[userAddr].state, "PENDING");
+    const key = `testPlainKey_${userAddr}`;
+    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].signs[key].state, "PENDING");
 
     await new Promise((r) => setTimeout(r, 0));
 
-    const sign = selectSign(store.getState().EthereumReducer, [userAddr]);
+    const sign = selectSign(store.getState().EthereumReducer, "testPlainKey", userAddr);
     assert.deepStrictEqual(sign.state, "ERROR");
     assert.deepStrictEqual(sign.error, "Error signing message");
   });
@@ -1101,6 +1107,7 @@ describe("All the tests with provider REJECTED Mock", () => {
     const whitelistAddr = "0x99b2949F4b12bF14F9AD66De374Cd5A2BF6a0C15";
     await store.dispatch({
       type: "ETH_SIWE_SIGN",
+      key: "testSiweKey",
       userAddress: userAddr,
       message: "I accept the Ensuro Terms of Service: https://ensuro.co/Ensuro_ToS.pdf....",
       email: "test@test.com",
@@ -1109,11 +1116,12 @@ describe("All the tests with provider REJECTED Mock", () => {
       whitelist: whitelistAddr,
     });
 
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].siweSigns[userAddr].state, "PENDING");
+    const key = `testSiweKey_${userAddr}`;
+    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].siweSigns[key].state, "PENDING");
 
     await new Promise((r) => setTimeout(r, 0));
 
-    const sign = selectEthSiweSign(store.getState().EthereumReducer, [userAddr]);
+    const sign = selectEthSiweSign(store.getState().EthereumReducer, "testSiweKey", userAddr);
     assert.deepStrictEqual(sign.state, "ERROR");
     assert.deepStrictEqual(sign.error, "Error signing message");
   });
