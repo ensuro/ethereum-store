@@ -43,8 +43,8 @@ const getChainStateTransacts = (state) => {
   return chainState[chainId] && chainState[chainId].transacts ? chainState[chainId].transacts : [];
 };
 
-const getSignKey = (__, address) => {
-  return address;
+const getSignKey = (__, key, address) => {
+  return `${key}_${address}`;
 };
 
 const getCallKey = (state, address, abiName, method, ...args) => {

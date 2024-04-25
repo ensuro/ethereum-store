@@ -224,14 +224,15 @@ export function* makeEthEipSign({ domain, types, value }) {
   }
 }
 
-export function* makeEthSiweSign({ message, userAddress, email, country, occupation, whitelist }) {
+export function* makeEthSiweSign({ key, message, userAddress, email, country, occupation, whitelist }) {
   const userState = yield select((state) => state.UserReducer);
   const addr = ethers.getAddress(userAddress);
   try {
     const signatureHash = yield call(signMessage, userState, addr, message);
     yield put({
       type: ETH_SIWE_SIGN_PROCESSED,
-      key: addr,
+      key: key,
+      userAddress: addr,
       signature: signatureHash,
       message: message,
       email: email,
@@ -240,23 +241,24 @@ export function* makeEthSiweSign({ message, userAddress, email, country, occupat
       whitelist: whitelist,
     });
   } catch (error) {
-    yield put({ type: ETH_SIWE_SIGN_FAILED, key: addr, payload: error.message });
+    yield put({ type: ETH_SIWE_SIGN_FAILED, key: key, userAddress: addr, payload: error.message });
   }
 }
 
-export function* makeSign({ message, userAddress }) {
+export function* makeSign({ key, message, userAddress }) {
   const userState = yield select((state) => state.UserReducer);
   const addr = ethers.getAddress(userAddress);
   try {
     const signatureHash = yield call(signMessage, userState, addr, message);
     yield put({
       type: ETH_PLAIN_SIGN_PROCESSED,
-      key: addr,
+      key: key,
+      userAddress: addr,
       signature: signatureHash,
       message: message,
     });
   } catch (error) {
-    yield put({ type: ETH_PLAIN_SIGN_FAILED, key: addr, payload: error.message });
+    yield put({ type: ETH_PLAIN_SIGN_FAILED, key: key, userAddress: addr, payload: error.message });
   }
 }
 

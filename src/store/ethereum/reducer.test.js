@@ -470,6 +470,7 @@ describe("Ethereum Reducer tests", () => {
     const initialState = { ...state, chainState: { 80001: { siweSigns: {} } } };
     const action = {
       type: "ETH_SIWE_SIGN",
+      key: "testSiweKey",
       message: "Please sign this message",
       userAddress: "0x4d68Cf31d613070b18E406AFd6A42719a62a0785",
       email: "test@test.com",
@@ -477,11 +478,11 @@ describe("Ethereum Reducer tests", () => {
       occupation: "Dev",
       whitelist: "0xEE18C16327F7c8C6aA740394f7f5F8d90FFB4BC0", // random address
     };
+
+    const key = `${action.key}_${action.userAddress}`;
     const expectedState = {
       ...state,
-      chainState: {
-        80001: { siweSigns: { "0x4d68Cf31d613070b18E406AFd6A42719a62a0785": { state: "PENDING" } } },
-      },
+      chainState: { 80001: { siweSigns: { [key]: { state: "PENDING" } } } },
     };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
   });
@@ -489,11 +490,14 @@ describe("Ethereum Reducer tests", () => {
   it("Should PROCESS the ETH_SIWE_SIGN", () => {
     const initialState = {
       ...state,
-      chainState: { 80001: { siweSigns: { "0x4d68Cf31d613070b18E406AFd6A42719a62a0785": { state: "PENDING" } } } },
+      chainState: {
+        80001: { siweSigns: { testSiweKey_0x4d68Cf31d613070b18E406AFd6A42719a62a0785: { state: "PENDING" } } },
+      },
     };
     const action = {
       type: "ETH_SIWE_SIGN_PROCESSED",
-      key: "0x4d68Cf31d613070b18E406AFd6A42719a62a0785",
+      key: "testSiweKey",
+      userAddress: "0x4d68Cf31d613070b18E406AFd6A42719a62a0785",
       signature: "0xabcd12345",
       message: "Please sign this message",
       email: "test@test.com",
@@ -501,15 +505,17 @@ describe("Ethereum Reducer tests", () => {
       occupation: "Dev",
       whitelist: "0xEE18C16327F7c8C6aA740394f7f5F8d90FFB4BC0", // random address
     };
+    const key = `${action.key}_${action.userAddress}`;
     const expectedState = {
       ...state,
       chainState: {
         80001: {
           siweSigns: {
-            "0x4d68Cf31d613070b18E406AFd6A42719a62a0785": {
+            [key]: {
               state: "SIGNED",
               signature: "0xabcd12345",
               message: "Please sign this message",
+              userAddress: "0x4d68Cf31d613070b18E406AFd6A42719a62a0785",
               email: "test@test.com",
               country: "Argentina",
               occupation: "Dev",
@@ -525,11 +531,14 @@ describe("Ethereum Reducer tests", () => {
   it("ETH_SIWE_SIGN should fail", () => {
     const initialState = {
       ...state,
-      chainState: { 80001: { siweSigns: { "0x4d68Cf31d613070b18E406AFd6A42719a62a0785": { state: "PENDING" } } } },
+      chainState: {
+        80001: { siweSigns: { testPlainSign_0x4d68Cf31d613070b18E406AFd6A42719a62a0785: { state: "PENDING" } } },
+      },
     };
     const action = {
       type: "ETH_SIWE_SIGN_FAILED",
-      key: "0x4d68Cf31d613070b18E406AFd6A42719a62a0785",
+      key: "testPlainSign",
+      userAddress: "0x4d68Cf31d613070b18E406AFd6A42719a62a0785",
       payload: "Error in the signature",
     };
     const expectedState = {
@@ -537,7 +546,7 @@ describe("Ethereum Reducer tests", () => {
       chainState: {
         80001: {
           siweSigns: {
-            "0x4d68Cf31d613070b18E406AFd6A42719a62a0785": {
+            testPlainSign_0x4d68Cf31d613070b18E406AFd6A42719a62a0785: {
               state: "ERROR",
               error: "Error in the signature",
             },
@@ -688,12 +697,18 @@ describe("Ethereum Reducer tests", () => {
   it("Should add one ETH_PLAIN_SIGN", () => {
     const initialState = { ...state, chainState: { 80001: { signs: {} } } };
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
-    const action = { type: "ETH_PLAIN_SIGN", message: "Please sign this message", userAddress: userAddr };
+    const action = {
+      type: "ETH_PLAIN_SIGN",
+      key: "testPlainSign",
+      message: "Please sign this message",
+      userAddress: userAddr,
+    };
 
+    const key = `${action.key}_${userAddr}`;
     const expectedState = {
       ...state,
       chainState: {
-        80001: { signs: { [userAddr]: { state: "PENDING" } } },
+        80001: { signs: { [key]: { state: "PENDING" } } },
       },
     };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
@@ -704,18 +719,21 @@ describe("Ethereum Reducer tests", () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const action = {
       type: "ETH_PLAIN_SIGN_PROCESSED",
-      key: userAddr,
+      key: "testPlainSign",
+      userAddress: userAddr,
       signature: "0xabcd1234",
       message: "Please sign this message",
     };
 
+    const key = `${action.key}_${userAddr}`;
     const expectedState = {
       ...state,
       chainState: {
         80001: {
           signs: {
-            [userAddr]: {
+            [key]: {
               state: "SIGNED",
+              userAddress: userAddr,
               signature: "0xabcd1234",
               message: "Please sign this message",
             },
