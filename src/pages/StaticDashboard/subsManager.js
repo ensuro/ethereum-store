@@ -1,36 +1,19 @@
-import React, { useEffect, useRef } from "react";
-import { useDispatch } from "react-redux";
-import { connect } from "react-redux";
+import React, { useEffect } from "react";
+import { connect, useDispatch } from "react-redux";
 import { selectCurrentChain, selectEthCallMultiple } from "../../store/ethereum/selectors";
+import { addRemoveEthSub } from "../../utils/helpers/store_helper";
 
 const componentEthCalls = function () {
-  return [
-    {
-      address: "0x280A556d9AEeF50725756f1C020e32FE137C3516", // USDC Address
-      abi: "ERC20",
-      method: "symbol",
-      args: [],
-    },
-  ];
+  // USDC Address
+  return [{ address: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", abi: "ERC20", method: "symbol", args: [] }];
 };
 
 const SubsManager = ({ symbol, currentChain }) => {
   let dispatch = useDispatch();
-  const mounted = useRef(false);
 
-  // Initial useEffects
   useEffect(() => {
-    mounted.current = true;
-    dispatch({
-      type: "ETH_ADD_SUBSCRIPTION",
-      key: "subsManager",
-      componentEthCalls: componentEthCalls(),
-    });
-    return () => {
-      dispatch({ type: "ETH_REMOVE_SUBSCRIPTION", key: "subsManager" });
-      mounted.current = false;
-    };
-  }, [dispatch, currentChain]);
+    return addRemoveEthSub(dispatch, "subsManager", componentEthCalls());
+  }, [dispatch]);
 
   return (
     <React.Fragment>

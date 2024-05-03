@@ -1,4 +1,4 @@
-import { getEncodedCallFn } from "../../package-index";
+import { defaultClock, getEncodedCallFn } from "../../package-index";
 
 import {
   ETH_CALL,
@@ -6,7 +6,6 @@ import {
   ETH_CALL_SUCCESS,
   ETH_ADD_SUBSCRIPTION,
   ETH_REMOVE_SUBSCRIPTION,
-  SET_TIMESTAMP_TO_REFRESH,
   ETH_TRANSACT,
   ETH_TRANSACT_QUEUED,
   ETH_TRANSACT_REJECTED,
@@ -24,12 +23,14 @@ import {
   ETH_PLAIN_SIGN_PROCESSED,
   ETH_PLAIN_SIGN_FAILED,
   SET_USER_CURRENT_CHAIN,
+  ETH_SUBSCRIPTION_INCREASE_CLOCK,
+  ETH_INCREASE_CLOCK,
 } from "./actionTypes";
 
 const { ethers } = require("ethers");
 const INIT_STATE = {
-  timestamp: 0,
-  currentChain: { name: "Mumbai", id: 80001, rpc: "https://rpc.ankr.com/polygon_mumbai" },
+  currentClock: 0,
+  currentChain: { name: "Sepolia", id: 11155111, rpc: "https://ethereum-sepolia-rpc.publicnode.com" },
   chainState: {
     /*
      * <chainId>: {
@@ -96,7 +97,14 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_ADD_SUBSCRIPTION:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "subscriptions", action.key], () => action.componentEthCalls);
+      if (state.chainState[chainId]?.subscriptions.hasOwnProperty([action.key]))
+        throw new Error(`Subscription '${action.key}' already exists`);
+      const dict = {
+        functions: action.componentEthCalls,
+        clockCount: action.clockCount || defaultClock,
+        nextClock: state.currentClock,
+      };
+      state = modifyNode(state, ["chainState", chainId, "subscriptions", action.key], () => dict);
       break;
 
     case ETH_REMOVE_SUBSCRIPTION:
@@ -105,8 +113,18 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       state = { ...state, chainState: newChainState };
       break;
 
-    case SET_TIMESTAMP_TO_REFRESH:
-      state = { ...state, timestamp: action.timestamp };
+    case ETH_SUBSCRIPTION_INCREASE_CLOCK:
+      chainId = state.currentChain.id;
+      state = modifyNode(
+        state,
+        ["chainState", chainId, "subscriptions", action.key, "nextClock"],
+        () => action.newClock
+      );
+      break;
+
+    case ETH_INCREASE_CLOCK:
+      const newCount = state.currentClock + 1;
+      state = { ...state, currentClock: newCount };
       break;
 
     case ETH_TRANSACT:

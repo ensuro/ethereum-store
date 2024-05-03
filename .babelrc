@@ -3,7 +3,7 @@
   "ignore": [
     "src/helpers/**",
     "src/pages/**",
-    "src/utils/**",
+    "src/utils/testing/**",
     "src/routes/**",
     "src/store/*.js",
     "src/App.js",

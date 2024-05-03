@@ -32,6 +32,7 @@ In the `sagas.js` file:
 ```js
 import { ethereumSaga, initializeEthereumStore } from "ethereum-store/src/package-index";
 
+const clockCount = 15;
 initializeEthereumStore({
   getEncodedCall,
   getContract,
@@ -44,6 +45,7 @@ initializeEthereumStore({
   selectChainId,
   selectProvider,
   chain,
+  clockCount, // clockCount is the amount of times an ETH_CALL will be skipped - default is 10
 });
 
 export default function* rootSaga() {
@@ -52,6 +54,20 @@ export default function* rootSaga() {
     fork(ethereumSaga),
   ]);
 }
+```
+
+### Add the dispatch clock
+
+In the `App.js` add this `useEffect` to dispatch the clock every Xms.
+This clock will dispatch an action in the saga every Xms and that action will call the blockchain.
+
+```js
+useEffect(() => {
+  const interval = setInterval(() => {
+    dispatch({ type: "ETH_DISPATCH_CLOCK" });
+  }, 500);
+  return () => clearInterval(interval);
+}, [dispatch]);
 ```
 
 # Actions
@@ -73,14 +89,24 @@ export const ETH_CALL_FAIL = "ETH_CALL_FAIL";
 
 export const ETH_ADD_SUBSCRIPTION = "ETH_ADD_SUBSCRIPTION";
 export const ETH_REMOVE_SUBSCRIPTION = "ETH_REMOVE_SUBSCRIPTION";
-
 /*
  * Sample actions
  * {type: ETH_ADD_SUBSCRIPTION, key: "positions", componentEthCalls: [{address: "0x...", abi: "AavePool", method: "getUserAccountData", args: [user.address]}]}
+ * {type: ETH_REMOVE_SUBSCRIPTION, key: "positions" }
  */
 
+export const ETH_SUBSCRIPTION_INCREASE_CLOCK = "ETH_SUBSCRIPTION_INCREASE_CLOCK";
+/*
+ * ETH_SUBSCRIPTION_INCREASE_CLOCK -> This action sets when to call each subscription again
+ */
+export const ETH_INCREASE_CLOCK = "ETH_INCREASE_CLOCK";
+/*
+ * ETH_INCREASE_CLOCK -> Increase the general clock to check if the saga should call the blockchain again
+ */
 export const ETH_DISPATCH_CLOCK = "ETH_DISPATCH_CLOCK";
-export const SET_TIMESTAMP_TO_REFRESH = "SET_TIMESTAMP_TO_REFRESH";
+/*
+ * ETH_DISPATCH_CLOCK -> This clock will dispatch an action in the saga every Xms and that action will call the blockchain.
+ */
 
 /* ETH Transactions */
 export const ETH_TRANSACT = "ETH_TRANSACT"; // UI --> saga

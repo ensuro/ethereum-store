@@ -4,7 +4,7 @@ import * as contractRegistry from "../../helpers/contractRegistry";
 
 const { ethers } = require("ethers");
 
-const currencyAddress = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"; // Polygon USDC address
+const currencyAddress = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"; // Sepolia USDC address
 contractRegistry.registerABI("ERC20Permit", require("@openzeppelin/contracts/build/contracts/ERC20Permit.json").abi);
 contractRegistry.registerContract(currencyAddress, "ERC20Permit");
 contractRegistry.registerFormatter("ERC20Permit", "totalSupply", undefined);
@@ -25,8 +25,8 @@ describe("Ethereum Reducer tests", () => {
   });
 
   const state = {
-    timestamp: 0,
-    currentChain: { name: "Mumbai", id: 80001, rpc: "https://rpc.ankr.com/polygon_mumbai" },
+    currentClock: 0,
+    currentChain: { name: "Sepolia", id: 11155111, rpc: "https://ethereum-sepolia-rpc.publicnode.com" },
     chainState: {},
   };
 
@@ -51,7 +51,7 @@ describe("Ethereum Reducer tests", () => {
   });
 
   it("Should add one subscription", () => {
-    const initialState = { ...state, chainState: { 80001: { subscriptions: {} } } };
+    const initialState = { ...state, chainState: { 11155111: { subscriptions: {} } } };
     const action = {
       type: "ETH_ADD_SUBSCRIPTION",
       key: "foo",
@@ -60,7 +60,15 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: { subscriptions: { foo: [{ address: "0x00", abi: "ERC20Permit", method: "totalSupply", args: [] }] } },
+        11155111: {
+          subscriptions: {
+            foo: {
+              functions: [{ address: "0x00", abi: "ERC20Permit", method: "totalSupply", args: [] }],
+              clockCount: 10,
+              nextClock: 0,
+            },
+          },
+        },
       },
     };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
@@ -70,18 +78,24 @@ describe("Ethereum Reducer tests", () => {
     const initialState = {
       ...state,
       chainState: {
-        80001: { subscriptions: { foo: [{ address: "0x00", abi: "ERC20Permit", method: "totalSupply", args: [] }] } },
+        11155111: {
+          subscriptions: {
+            foo: {
+              functions: [{ address: "0x00", abi: "ERC20Permit", method: "totalSupply", args: [] }],
+              clockCount: 10,
+              nextClock: 0,
+            },
+          },
+        },
       },
     };
-    const action = {
-      type: "ETH_ADD_SUBSCRIPTION",
-      key: "foo",
-      componentEthCalls: [{ address: "0x00", abi: "ERC20Permit", method: "totalSupply", args: [] }],
-    };
+    const action = { type: "ETH_REMOVE_SUBSCRIPTION", key: "foo" };
     const expectedState = {
       ...state,
       chainState: {
-        80001: { subscriptions: { foo: [{ address: "0x00", abi: "ERC20Permit", method: "totalSupply", args: [] }] } },
+        11155111: {
+          subscriptions: {},
+        },
       },
     };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
@@ -91,7 +105,15 @@ describe("Ethereum Reducer tests", () => {
     const initialState = {
       ...state,
       chainState: {
-        80001: { subscriptions: { foo: [{ address: "0x00", abi: "ERC20Permit", method: "totalSupply", args: [] }] } },
+        11155111: {
+          subscriptions: {
+            foo: {
+              functions: [{ address: "0x00", abi: "ERC20Permit", method: "totalSupply", args: [] }],
+              clockCount: 10,
+              nextClock: 0,
+            },
+          },
+        },
       },
     };
     const action = {
@@ -102,10 +124,18 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           subscriptions: {
-            foo: [{ address: "0x00", abi: "ERC20Permit", method: "totalSupply", args: [] }],
-            bar: [{ address: "0x01", abi: "ERC20Permit", method: "name", args: [] }],
+            foo: {
+              functions: [{ address: "0x00", abi: "ERC20Permit", method: "totalSupply", args: [] }],
+              clockCount: 10,
+              nextClock: 0,
+            },
+            bar: {
+              functions: [{ address: "0x01", abi: "ERC20Permit", method: "name", args: [] }],
+              clockCount: 10,
+              nextClock: 0,
+            },
           },
         },
       },
@@ -114,7 +144,7 @@ describe("Ethereum Reducer tests", () => {
   });
 
   it("Should add one ETH_CALL", () => {
-    const initialState = { ...state, chainState: { 80001: { calls: {} } } };
+    const initialState = { ...state, chainState: { 11155111: { calls: {} } } };
     const action = {
       type: "ETH_CALL",
       address: "0x00",
@@ -125,14 +155,14 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: { calls: { "0x00_0x06fdde03": { state: "LOADING" } } },
+        11155111: { calls: { "0x00_0x06fdde03": { state: "LOADING" } } },
       },
     };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
   });
 
   it("Should add one ETH_CALL and there is already another one", () => {
-    const initialState = { ...state, chainState: { 80001: { calls: { "0x00_0x06fdde03": { state: "LOADING" } } } } };
+    const initialState = { ...state, chainState: { 11155111: { calls: { "0x00_0x06fdde03": { state: "LOADING" } } } } };
     const action = {
       type: "ETH_CALL",
       address: "0x00",
@@ -143,14 +173,14 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: { calls: { "0x00_0x06fdde03": { state: "LOADING" }, "0x00_0x18160ddd": { state: "LOADING" } } },
+        11155111: { calls: { "0x00_0x06fdde03": { state: "LOADING" }, "0x00_0x18160ddd": { state: "LOADING" } } },
       },
     };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
   });
 
   it("Should retry the ETH_CALL", () => {
-    const initialState = { ...state, chainState: { 80001: { calls: {} } } };
+    const initialState = { ...state, chainState: { 11155111: { calls: {} } } };
     const action = {
       type: "ETH_CALL",
       address: "0x00",
@@ -162,14 +192,14 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: { calls: { "0x00_0x06fdde03": { state: "LOADING", retries: 5 } } },
+        11155111: { calls: { "0x00_0x06fdde03": { state: "LOADING", retries: 5 } } },
       },
     };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
   });
 
   it("The ETH_CALL was successful", () => {
-    const initialState = { ...state, chainState: { 80001: { calls: { "0x00_0x06fdde03": { state: "LOADING" } } } } };
+    const initialState = { ...state, chainState: { 11155111: { calls: { "0x00_0x06fdde03": { state: "LOADING" } } } } };
     const action = {
       type: "ETH_CALL_SUCCESS",
       call_key: "0x00_0x06fdde03",
@@ -180,7 +210,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           calls: { "0x00_0x06fdde03": { state: "LOADED", value: "FakeUSDC" } },
           call_metadata: { "0x00_0x06fdde03": { timestamp: 1703683845252 } },
         },
@@ -193,7 +223,7 @@ describe("Ethereum Reducer tests", () => {
     const initialState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           calls: { "0x00_0x06fdde03": { state: "LOADED", value: "FakeUSDC" }, "0x00_0x18160ddd": { state: "LOADING" } },
           call_metadata: { "0x00_0x06fdde03": { timestamp: 1703683845252 } },
         },
@@ -209,7 +239,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           calls: {
             "0x00_0x06fdde03": { state: "LOADED", value: "FakeUSDC" },
             "0x00_0x18160ddd": { state: "LOADED", value: 100 },
@@ -227,14 +257,14 @@ describe("Ethereum Reducer tests", () => {
   it("The ETH_CALL fails", () => {
     const initialState = {
       ...state,
-      chainState: { 80001: { calls: { "0x00_0x06fdde03": { state: "LOADING", retries: 9 } } } },
+      chainState: { 11155111: { calls: { "0x00_0x06fdde03": { state: "LOADING", retries: 9 } } } },
     };
     const action = { type: "ETH_CALL_FAIL", payload: "eth call fails", call_key: "0x00_0x06fdde03" };
 
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           calls: { "0x00_0x06fdde03": { state: "ERROR", retries: 9 } },
         },
       },
@@ -243,7 +273,7 @@ describe("Ethereum Reducer tests", () => {
   });
 
   it("Should add one ETH_TRANSACT", () => {
-    const initialState = { ...state, chainState: { 80001: { transacts: [] } } };
+    const initialState = { ...state, chainState: { 11155111: { transacts: [] } } };
     const action = {
       type: "ETH_TRANSACT",
       address: currencyAddress,
@@ -254,7 +284,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -272,7 +302,7 @@ describe("Ethereum Reducer tests", () => {
     const initialState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -291,7 +321,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -311,7 +341,7 @@ describe("Ethereum Reducer tests", () => {
     const initialState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -330,7 +360,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -350,7 +380,7 @@ describe("Ethereum Reducer tests", () => {
     const initialState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -370,7 +400,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -390,7 +420,7 @@ describe("Ethereum Reducer tests", () => {
     const initialState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -410,7 +440,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -430,7 +460,7 @@ describe("Ethereum Reducer tests", () => {
     const initialState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -450,7 +480,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           transacts: [
             {
               address: currencyAddress,
@@ -467,7 +497,7 @@ describe("Ethereum Reducer tests", () => {
   });
 
   it("Should add one ETH_SIWE_SIGN", () => {
-    const initialState = { ...state, chainState: { 80001: { siweSigns: {} } } };
+    const initialState = { ...state, chainState: { 11155111: { siweSigns: {} } } };
     const action = {
       type: "ETH_SIWE_SIGN",
       key: "testSiweKey",
@@ -482,7 +512,7 @@ describe("Ethereum Reducer tests", () => {
     const key = `${action.key}_${action.userAddress}`;
     const expectedState = {
       ...state,
-      chainState: { 80001: { siweSigns: { [key]: { state: "PENDING" } } } },
+      chainState: { 11155111: { siweSigns: { [key]: { state: "PENDING" } } } },
     };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
   });
@@ -491,7 +521,7 @@ describe("Ethereum Reducer tests", () => {
     const initialState = {
       ...state,
       chainState: {
-        80001: { siweSigns: { testSiweKey_0x4d68Cf31d613070b18E406AFd6A42719a62a0785: { state: "PENDING" } } },
+        11155111: { siweSigns: { testSiweKey_0x4d68Cf31d613070b18E406AFd6A42719a62a0785: { state: "PENDING" } } },
       },
     };
     const action = {
@@ -509,7 +539,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           siweSigns: {
             [key]: {
               state: "SIGNED",
@@ -532,7 +562,7 @@ describe("Ethereum Reducer tests", () => {
     const initialState = {
       ...state,
       chainState: {
-        80001: { siweSigns: { testPlainSign_0x4d68Cf31d613070b18E406AFd6A42719a62a0785: { state: "PENDING" } } },
+        11155111: { siweSigns: { testPlainSign_0x4d68Cf31d613070b18E406AFd6A42719a62a0785: { state: "PENDING" } } },
       },
     };
     const action = {
@@ -544,7 +574,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           siweSigns: {
             testPlainSign_0x4d68Cf31d613070b18E406AFd6A42719a62a0785: {
               state: "ERROR",
@@ -558,7 +588,7 @@ describe("Ethereum Reducer tests", () => {
   });
 
   it("Should add one ETH_EIP_712_SIGN", () => {
-    const initialState = { ...state, chainState: { 80001: { eipSigns: {} } } };
+    const initialState = { ...state, chainState: { 11155111: { eipSigns: {} } } };
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
@@ -578,7 +608,7 @@ describe("Ethereum Reducer tests", () => {
       nonce: 10,
       deadline: deadline,
     };
-    const usdcDomain = { name: "USDC", version: "1", chainId: 80001, verifyingContract: currencyAddress };
+    const usdcDomain = { name: "USDC", version: "1", chainId: 11155111, verifyingContract: currencyAddress };
     const action = {
       type: "ETH_EIP_712_SIGN",
       domain: usdcDomain,
@@ -590,7 +620,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: { eipSigns: { [key]: { state: "PENDING" } } },
+        11155111: { eipSigns: { [key]: { state: "PENDING" } } },
       },
     };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
@@ -616,9 +646,9 @@ describe("Ethereum Reducer tests", () => {
       nonce: 10,
       deadline: deadline,
     };
-    const usdcDomain = { name: "USDC", version: "1", chainId: 80001, verifyingContract: currencyAddress };
+    const usdcDomain = { name: "USDC", version: "1", chainId: 11155111, verifyingContract: currencyAddress };
     const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
-    const initialState = { ...state, chainState: { 80001: { eipSigns: { [key]: { state: "PENDING" } } } } };
+    const initialState = { ...state, chainState: { 11155111: { eipSigns: { [key]: { state: "PENDING" } } } } };
     const action = {
       type: "ETH_EIP_712_SIGN_PROCESSED",
       key: key,
@@ -631,7 +661,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           eipSigns: {
             [key]: {
               state: "SIGNED",
@@ -668,9 +698,9 @@ describe("Ethereum Reducer tests", () => {
       nonce: 10,
       deadline: deadline,
     };
-    const usdcDomain = { name: "USDC", version: "1", chainId: 80001, verifyingContract: currencyAddress };
+    const usdcDomain = { name: "USDC", version: "1", chainId: 11155111, verifyingContract: currencyAddress };
     const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
-    const initialState = { ...state, chainState: { 80001: { eipSigns: { [key]: { state: "PENDING" } } } } };
+    const initialState = { ...state, chainState: { 11155111: { eipSigns: { [key]: { state: "PENDING" } } } } };
     const action = {
       type: "ETH_EIP_712_SIGN_FAILED",
       key: key,
@@ -680,7 +710,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           eipSigns: {
             [key]: {
               state: "ERROR",
@@ -695,7 +725,7 @@ describe("Ethereum Reducer tests", () => {
   });
 
   it("Should add one ETH_PLAIN_SIGN", () => {
-    const initialState = { ...state, chainState: { 80001: { signs: {} } } };
+    const initialState = { ...state, chainState: { 11155111: { signs: {} } } };
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const action = {
       type: "ETH_PLAIN_SIGN",
@@ -708,14 +738,14 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: { signs: { [key]: { state: "PENDING" } } },
+        11155111: { signs: { [key]: { state: "PENDING" } } },
       },
     };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
   });
 
   it("Proccess the ETH_PLAIN_SIGN", () => {
-    const initialState = { ...state, chainState: { 80001: { signs: {} } } };
+    const initialState = { ...state, chainState: { 11155111: { signs: {} } } };
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const action = {
       type: "ETH_PLAIN_SIGN_PROCESSED",
@@ -729,7 +759,7 @@ describe("Ethereum Reducer tests", () => {
     const expectedState = {
       ...state,
       chainState: {
-        80001: {
+        11155111: {
           signs: {
             [key]: {
               state: "SIGNED",

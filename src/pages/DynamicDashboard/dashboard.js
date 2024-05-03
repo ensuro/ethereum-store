@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
-import _ from "lodash";
 import { Container } from "reactstrap";
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { useDispatch } from "react-redux";
 import { connect } from "react-redux";
-import { selectEthCall } from "../../store/ethereum/selectors";
-import { map } from "lodash";
+import { selectCurrentChain, selectEthCall } from "../../store/ethereum/selectors";
 
 const DynamicDashboard = ({ state, subscriptions }) => {
   let dispatch = useDispatch();
@@ -16,13 +14,7 @@ const DynamicDashboard = ({ state, subscriptions }) => {
 
   const dispatchCall = () => {
     if (contractAddress && method)
-      dispatch({
-        type: "ETH_CALL",
-        address: contractAddress,
-        abi: "ERC20",
-        method: method,
-        args: [],
-      });
+      dispatch({ type: "ETH_CALL", address: contractAddress, abi: "ERC20", method: method, args: [] });
     setClicked(true);
   };
 
@@ -40,7 +32,7 @@ const DynamicDashboard = ({ state, subscriptions }) => {
     <React.Fragment>
       <div className="page-content">
         <Container fluid>
-          <h1>ERC 20 Methods - Mumbai</h1>
+          <h1>ERC 20 Methods - Sepolia</h1>
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>Contract Address</Form.Label>
@@ -57,12 +49,11 @@ const DynamicDashboard = ({ state, subscriptions }) => {
             <Form.Group className="mb-3">
               <Form.Label>Contract method</Form.Label>
               <InputGroup>
-                <Form.Control
-                  placeholder="Enter the contract method"
-                  id="method"
-                  value={method}
-                  onChange={(e) => setMethod(e.target.value || "")}
-                />
+                <Form.Select onChange={(e) => setMethod(e.target.value || "")} aria-label="Select the Contract method">
+                  <option value="">Select the Contract method</option>
+                  <option value="totalSupply">Total Supply</option>
+                  <option value="name">Name</option>
+                </Form.Select>
               </InputGroup>
             </Form.Group>
           </Form>
@@ -79,17 +70,6 @@ const DynamicDashboard = ({ state, subscriptions }) => {
             </>
           )}
           <hr />
-          {!_.isEmpty(subscriptions) && (
-            <>
-              <h5>Subscriptions: </h5>
-              {map(Object.keys(subscriptions), (key) => (
-                <React.Fragment key={key}>
-                  <p>{key}</p>
-                  <p>{subscriptions[key]}</p>
-                </React.Fragment>
-              ))}
-            </>
-          )}
         </Container>
       </div>
     </React.Fragment>
@@ -97,8 +77,8 @@ const DynamicDashboard = ({ state, subscriptions }) => {
 };
 
 const mapStateToProps = (state) => {
-  const subscriptions = state.EthereumReducer.subscriptions;
-
+  const currentChain = selectCurrentChain(state.EthereumReducer);
+  const subscriptions = state.EthereumReducer.chainState[currentChain?.id]?.subscriptions;
   return { state: state.EthereumReducer, subscriptions };
 };
 

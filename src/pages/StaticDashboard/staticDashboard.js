@@ -1,49 +1,32 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import _ from "lodash";
 import { map } from "lodash";
 import { Container } from "reactstrap";
 import { Button } from "react-bootstrap";
-import { useDispatch } from "react-redux";
-import { connect } from "react-redux";
+import { connect, useDispatch } from "react-redux";
 import { selectCurrentChain, selectEthCallMultiple } from "../../store/ethereum/selectors";
 import SubsManager from "./subsManager";
+import { addRemoveEthSub } from "../../utils/helpers/store_helper";
 
 const componentEthCalls = function () {
-  return [
-    {
-      address: "0x280A556d9AEeF50725756f1C020e32FE137C3516", // USDC Address
-      abi: "ERC20",
-      method: "totalSupply",
-      args: [],
-    },
-  ];
+  // USDC Address
+  return [{ address: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", abi: "ERC20", method: "totalSupply", args: [] }];
 };
 
 const Static = ({ totalSupply, subscriptions, currentChain }) => {
   let dispatch = useDispatch();
   const [sub, setSub] = useState(false);
-  const mounted = useRef(false);
 
-  // Initial useEffects
   useEffect(() => {
-    mounted.current = true;
-    dispatch({
-      type: "ETH_ADD_SUBSCRIPTION",
-      key: "staticDashboard",
-      componentEthCalls: componentEthCalls(),
-    });
-    return () => {
-      dispatch({ type: "ETH_REMOVE_SUBSCRIPTION", key: "staticDashboard" });
-      mounted.current = false;
-    };
-  }, [dispatch, currentChain]);
+    return addRemoveEthSub(dispatch, "staticDashboard", componentEthCalls());
+  }, [dispatch]);
 
   return (
     <React.Fragment>
       <div className="page-content">
         <Container fluid>
-          <h1>Dashboard to see ETH Subscriptions on eToken KYC Sr</h1>
-          <h3>Contract Address: 0x280A556d9AEeF50725756f1C020e32FE137C3516</h3>
+          <h1>Dashboard to see ETH Subscriptions on USDC Contract</h1>
+          <h3>Contract Address: 0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8</h3>
 
           <hr />
           <h3>Method: totalSupply</h3>
@@ -68,7 +51,7 @@ const Static = ({ totalSupply, subscriptions, currentChain }) => {
               {map(Object.keys(subscriptions), (key) => (
                 <React.Fragment key={key}>
                   <p>{key}</p>
-                  {subscriptions[key].map((s, idx) => (
+                  {subscriptions[key]?.functions.map((s, idx) => (
                     <React.Fragment key={idx}>
                       <li>Address: {s.address}</li>
                       <li>ABI: {s.abi}</li>
@@ -95,7 +78,7 @@ const Static = ({ totalSupply, subscriptions, currentChain }) => {
 const mapStateToProps = (state) => {
   const [totalSupply] = selectEthCallMultiple(state.EthereumReducer, componentEthCalls());
   const currentChain = selectCurrentChain(state.EthereumReducer);
-  const subscriptions = state.EthereumReducer.subscriptions;
+  const subscriptions = state.EthereumReducer.chainState[currentChain?.id]?.subscriptions;
   return { totalSupply, subscriptions, currentChain };
 };
 
