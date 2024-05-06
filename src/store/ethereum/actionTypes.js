@@ -126,3 +126,8 @@ export const ETH_PLAIN_SIGN_PROCESSED = "ETH_PLAIN_SIGN_PROCESSED";
  * {type: ETH_PLAIN_SIGN_FAILED, key: "quadrataWelcome", payload: error.message  }
  */
 export const ETH_PLAIN_SIGN_FAILED = "ETH_PLAIN_SIGN_FAILED";
+
+/**
+ * {type: SET_USER_CURRENT_CHAIN, name: "Sepolia", id: 11155111, rpc: rpcUrl  }
+ */
+export const SET_USER_CURRENT_CHAIN = "SET_USER_CURRENT_CHAIN";
