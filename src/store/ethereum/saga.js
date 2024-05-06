@@ -174,11 +174,7 @@ export function* refreshAllSubscriptionsCalls() {
         if (!keyArray.has(key)) ethCalls.add(sub);
         keyArray.add(key);
       }
-      yield put({
-        type: ETH_SUBSCRIPTION_INCREASE_CLOCK,
-        key: subKey,
-        newClock: subscriptions[subKey].clockCount + next,
-      });
+      yield put({ type: ETH_SUBSCRIPTION_INCREASE_CLOCK, key: subKey });
     }
   }
 

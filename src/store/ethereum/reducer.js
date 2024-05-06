@@ -115,11 +115,9 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_SUBSCRIPTION_INCREASE_CLOCK:
       chainId = state.currentChain.id;
-      state = modifyNode(
-        state,
-        ["chainState", chainId, "subscriptions", action.key, "nextClock"],
-        () => action.newClock
-      );
+      state = modifyNode(state, ["chainState", chainId, "subscriptions", action.key], (sub) => {
+        return { ...sub, nextClock: sub.nextClock + sub.clockCount };
+      });
       break;
 
     case ETH_INCREASE_CLOCK:
