@@ -164,14 +164,14 @@ export function* refreshAllSubscriptionsCalls() {
   const subscriptions = state.chainState[chainId]?.subscriptions;
   const currentClock = state.currentClock;
   const keyArray = new Set();
-  const ethCalls = new Set();
+  const ethCalls = [];
   for (const subKey in subscriptions) {
     const next = subscriptions[subKey].nextClock;
     if (next === currentClock) {
       const subscriptionArray = subscriptions[subKey].functions;
       for (const sub of subscriptionArray) {
         let key = sub.address + "_" + getEncodedCallFn(sub.address, sub.abi, sub.method, sub.args, rpc);
-        if (!keyArray.has(key)) ethCalls.add(sub);
+        if (!keyArray.has(key)) ethCalls.push(sub);
         keyArray.add(key);
       }
       yield put({ type: ETH_SUBSCRIPTION_INCREASE_CLOCK, key: subKey });
@@ -179,7 +179,7 @@ export function* refreshAllSubscriptionsCalls() {
   }
 
   yield all(
-    Array.from(ethCalls).map((call) =>
+    ethCalls.map((call) =>
       put({ type: ETH_CALL, address: call.address, abi: call.abi, method: call.method, args: call.args })
     )
   );
