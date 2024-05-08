@@ -608,7 +608,7 @@ describe("Ethereum Reducer tests", () => {
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
   });
 
-  it("Should add one ETH_PLAIN_SIGN with nextAction", () => {
+  it("Should add one ETH_PLAIN_SIGN", () => {
     const initialState = { ...state, chainState: { 11155111: { signs: {} } } };
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const action = {
