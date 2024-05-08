@@ -168,37 +168,17 @@ export const ETH_EIP_712_SIGN_PROCESSED = "ETH_EIP_712_SIGN_PROCESSED";
 export const ETH_EIP_712_SIGN_FAILED = "ETH_EIP_712_SIGN_FAILED";
 
 /**
- * {type: ETH_SIWE_SIGN, key: "someKey", message: "message to sign", userAddress: "0x..", email: "email@ensuro.co", country: "AR", occupation: "Developer"}
- */
-export const ETH_SIWE_SIGN = "ETH_SIWE_SIGN";
-
-/**
- * {type: ETH_SIWE_SIGN_PROCESSED, key: "someKey", userAddress: "0x..", signature: "0x1234...", message: "message to sign" }
- */
-export const ETH_SIWE_SIGN_PROCESSED = "ETH_SIWE_SIGN_PROCESSED";
-
-/**
- * {type: ETH_SIWE_SIGN_FAILED, key: "someKey", payload: error.message }
- */
-export const ETH_SIWE_SIGN_FAILED = "ETH_SIWE_SIGN_FAILED";
-
-/**
- * {type: SET_ETH_SIWE_SIGN, key: "someKey", signature: "0x1234...", message: "message to sign", userAddress: "0x.." }
- */
-export const SET_ETH_SIWE_SIGN = "SET_ETH_SIWE_SIGN";
-
-/**
- * {type: ETH_PLAIN_SIGN, key: "quadrataWelcome", message: "Welcome to Quadrata! By signing, you agree to the Terms of Service.", userAddress: "0x.."}
+ * {type: ETH_PLAIN_SIGN, key: "key", message: "Welcome! By signing, you agree to the Terms of Service.", userAddress: "0x..", nextAction?: {} }
  */
 export const ETH_PLAIN_SIGN = "ETH_PLAIN_SIGN";
 
 /**
- * {type: ETH_PLAIN_SIGN_PROCESSED, key: "quadrataWelcome", userAddress: "0x..", signature: "0x1234...", message: "message to sign"}
+ * {type: ETH_PLAIN_SIGN_PROCESSED, key: "key", userAddress: "0x..", signature: "0x1234...", message: "message to sign"}
  */
 export const ETH_PLAIN_SIGN_PROCESSED = "ETH_PLAIN_SIGN_PROCESSED";
 
 /**
- * {type: ETH_PLAIN_SIGN_FAILED, key: "quadrataWelcome", payload: error.message  }
+ * {type: ETH_PLAIN_SIGN_FAILED, key: "key", payload: error.message  }
  */
 export const ETH_PLAIN_SIGN_FAILED = "ETH_PLAIN_SIGN_FAILED";
 

@@ -15,10 +15,6 @@ import {
   ETH_EIP_712_SIGN,
   ETH_EIP_712_SIGN_FAILED,
   ETH_EIP_712_SIGN_PROCESSED,
-  ETH_SIWE_SIGN,
-  ETH_SIWE_SIGN_FAILED,
-  ETH_SIWE_SIGN_PROCESSED,
-  SET_ETH_SIWE_SIGN,
   ETH_PLAIN_SIGN,
   ETH_PLAIN_SIGN_PROCESSED,
   ETH_PLAIN_SIGN_FAILED,
@@ -50,7 +46,6 @@ const INIT_STATE = {
      *    },
      *    transacts: [],
      *    signs: {},
-     *    siweSigns: {},
      *    eipSigns: {},
      */
   },
@@ -166,40 +161,6 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       chainId = state.currentChain.id;
       state = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
         return (transacts || []).with(action.id, { ...transacts[action.id], state: "EXPIRED" });
-      });
-      break;
-
-    case ETH_SIWE_SIGN:
-      chainId = state.currentChain.id;
-      const siweKey = `${action.key}_${action.userAddress}`;
-      state = modifyNode(state, ["chainState", chainId, "siweSigns", siweKey], () => {
-        return { state: "PENDING" };
-      });
-      break;
-
-    case SET_ETH_SIWE_SIGN:
-    case ETH_SIWE_SIGN_PROCESSED:
-      chainId = state.currentChain.id;
-      const siweKeySuccess = `${action.key}_${action.userAddress}`;
-      state = modifyNode(state, ["chainState", chainId, "siweSigns", siweKeySuccess], () => {
-        return {
-          state: "SIGNED",
-          signature: action.signature,
-          message: action.message,
-          userAddress: action.userAddress,
-          email: action.email,
-          country: action.country,
-          occupation: action.occupation,
-          whitelist: action.whitelist,
-        };
-      });
-      break;
-
-    case ETH_SIWE_SIGN_FAILED:
-      chainId = state.currentChain.id;
-      const siweKeyFail = `${action.key}_${action.userAddress}`;
-      state = modifyNode(state, ["chainState", chainId, "siweSigns", siweKeyFail], (x) => {
-        return { ...x, state: "ERROR", error: action.payload };
       });
       break;
 

@@ -31,12 +31,6 @@ const getChainStatePlainSigns = (state) => {
   return chainState[chainId] && chainState[chainId].signs ? chainState[chainId].signs : {};
 };
 
-const getChainStateSiweSigns = (state) => {
-  const chainId = getCurrentChain(state).id;
-  const chainState = getChainState(state);
-  return chainState[chainId] && chainState[chainId].siweSigns ? chainState[chainId].siweSigns : {};
-};
-
 const getChainStateTransacts = (state) => {
   const chainId = getCurrentChain(state).id;
   const chainState = getChainState(state);
@@ -93,11 +87,6 @@ export const selectLastTransact = createSelector(
 );
 
 export const selectSign = createSelector([getChainStatePlainSigns, getSignKey], (signs, signKey) => signs[signKey]);
-
-export const selectEthSiweSign = createSelector(
-  [getChainStateSiweSigns, getSignKey],
-  (signs, ethSignKey) => signs[ethSignKey]
-);
 
 export const selectBiggerSign = createSelector(
   [getChainStateEIPSigns, (__, addr, nonce, spender) => ({ addr, nonce, spender })],

@@ -17,9 +17,6 @@ import {
   ETH_EIP_712_SIGN,
   ETH_EIP_712_SIGN_FAILED,
   ETH_EIP_712_SIGN_PROCESSED,
-  ETH_SIWE_SIGN,
-  ETH_SIWE_SIGN_FAILED,
-  ETH_SIWE_SIGN_PROCESSED,
   ETH_PLAIN_SIGN,
   ETH_PLAIN_SIGN_PROCESSED,
   ETH_PLAIN_SIGN_FAILED,
@@ -211,39 +208,13 @@ export function* makeEthEipSign({ domain, types, value }) {
   }
 }
 
-export function* makeEthSiweSign({ key, message, userAddress, email, country, occupation, whitelist }) {
+export function* makeSign({ key, userAddress, message, nextAction }) {
   const userState = yield select((state) => state.UserReducer);
   const addr = ethers.getAddress(userAddress);
   try {
-    const signatureHash = yield call(signMessage, userState, addr, message);
-    yield put({
-      type: ETH_SIWE_SIGN_PROCESSED,
-      key: key,
-      userAddress: addr,
-      signature: signatureHash,
-      message: message,
-      email: email,
-      country: country,
-      occupation: occupation,
-      whitelist: whitelist,
-    });
-  } catch (error) {
-    yield put({ type: ETH_SIWE_SIGN_FAILED, key: key, userAddress: addr, payload: error.message });
-  }
-}
-
-export function* makeSign({ key, message, userAddress }) {
-  const userState = yield select((state) => state.UserReducer);
-  const addr = ethers.getAddress(userAddress);
-  try {
-    const signatureHash = yield call(signMessage, userState, addr, message);
-    yield put({
-      type: ETH_PLAIN_SIGN_PROCESSED,
-      key: key,
-      userAddress: addr,
-      signature: signatureHash,
-      message: message,
-    });
+    const sign = yield call(signMessage, userState, addr, message);
+    yield put({ type: ETH_PLAIN_SIGN_PROCESSED, key: key, userAddress: addr, signature: sign, message: message });
+    if (nextAction) yield put(nextAction);
   } catch (error) {
     yield put({ type: ETH_PLAIN_SIGN_FAILED, key: key, userAddress: addr, payload: error.message });
   }
@@ -255,7 +226,6 @@ export function* ethereumSaga() {
   yield takeEvery(ETH_TRANSACT, makeEthTransact);
   yield takeEvery(ETH_TRANSACT_QUEUED, listenTransact);
   yield takeEvery(ETH_PLAIN_SIGN, makeSign);
-  yield takeEvery(ETH_SIWE_SIGN, makeEthSiweSign);
   yield takeEvery(ETH_EIP_712_SIGN, makeEthEipSign);
 }
 
