@@ -208,13 +208,12 @@ export function* makeEthEipSign({ domain, types, value }) {
   }
 }
 
-export function* makeSign({ key, userAddress, message, nextAction }) {
+export function* makeSign({ key, userAddress, message }) {
   const userState = yield select((state) => state.UserReducer);
   const addr = ethers.getAddress(userAddress);
   try {
     const sign = yield call(signMessage, userState, addr, message);
     yield put({ type: ETH_PLAIN_SIGN_PROCESSED, key: key, userAddress: addr, signature: sign, message: message });
-    if (nextAction) yield put(nextAction);
   } catch (error) {
     yield put({ type: ETH_PLAIN_SIGN_FAILED, key: key, userAddress: addr, payload: error.message });
   }

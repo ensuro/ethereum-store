@@ -93,7 +93,7 @@ export const ETH_EIP_712_SIGN_PROCESSED = "ETH_EIP_712_SIGN_PROCESSED";
 export const ETH_EIP_712_SIGN_FAILED = "ETH_EIP_712_SIGN_FAILED";
 
 /**
- * {type: ETH_PLAIN_SIGN, key: "key", message: "Welcome! By signing, you agree to the Terms of Service.", userAddress: "0x..", nextAction?: {} }
+ * {type: ETH_PLAIN_SIGN, key: "key", message: "Welcome! By signing, you agree to the Terms of Service.", userAddress: "0x.." }
  */
 export const ETH_PLAIN_SIGN = "ETH_PLAIN_SIGN";
 

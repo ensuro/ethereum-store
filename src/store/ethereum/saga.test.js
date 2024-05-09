@@ -626,37 +626,6 @@ describe("All the test with provider resolver mock", () => {
     assert.deepStrictEqual(sign.message, "Simple example of plain text");
   });
 
-  test("ETH_PLAIN_SIGN with message and nextAction", async () => {
-    const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(12.345e6));
-    const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
-    await store.dispatch({
-      type: "ETH_PLAIN_SIGN",
-      key: "testPlainSign",
-      message: "Simple example of plain text",
-      userAddress: userAddr,
-      nextAction: { type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" },
-    });
-
-    const key = `testPlainSign_${userAddr}`;
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].signs[key].state, "PENDING");
-
-    await new Promise((r) => setTimeout(r, 0));
-
-    const sign = selectSign(store.getState().EthereumReducer, "testPlainSign", userAddr);
-    assert.deepStrictEqual(sign.state, "SIGNED");
-    assert.deepStrictEqual(sign.signature, "0x1234567890");
-    assert.deepStrictEqual(sign.message, "Simple example of plain text");
-
-    const call_key = currencyAddress + "_0x18160ddd"; // "18160ddd" == kekac256("totalSupply()")
-    sinon.assert.calledOnce(fakeTotalSupply);
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].calls, {
-      [call_key]: {
-        state: "LOADED",
-        value: Big(12.345),
-      },
-    });
-  });
-
   test("Signed eip712 message ETH_EIP_712_SIGN", async () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
