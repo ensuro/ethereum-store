@@ -1,0 +1,22 @@
+{
+  "name": "@ensuro/ethereum-store",
+  "description": "Ethereum Store for react redux",
+  "version": "%%VERSION%%",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ensuro/ethereum-store.git"
+  },
+  "keywords": [
+    "ethereum",
+    "insurance",
+    "ensuro",
+    "redux",
+    "store"
+  ],
+  "author": "Ensuro <guillermo@ensuro.co>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ensuro/ethereum-store/issues"
+  },
+  "homepage": "https://github.com/ensuro/ethereum-store#readme"
+}
