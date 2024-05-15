@@ -1,15 +1,13 @@
 import _ from "lodash";
 import { ethereum, gas } from "../../config";
-import { call, put, takeEvery, delay, select } from "redux-saga/effects";
+import { call, put, takeEvery, delay, select, all } from "redux-saga/effects";
 
 // Ethereum Redux States
 import {
   ETH_CALL,
   ETH_CALL_SUCCESS,
   ETH_CALL_FAIL,
-  ETH_ADD_SUBSCRIPTION,
   ETH_DISPATCH_CLOCK,
-  SET_TIMESTAMP_TO_REFRESH,
   ETH_TRANSACT,
   ETH_TRANSACT_QUEUED,
   ETH_TRANSACT_REJECTED,
@@ -19,12 +17,11 @@ import {
   ETH_EIP_712_SIGN,
   ETH_EIP_712_SIGN_FAILED,
   ETH_EIP_712_SIGN_PROCESSED,
-  ETH_SIWE_SIGN,
-  ETH_SIWE_SIGN_FAILED,
-  ETH_SIWE_SIGN_PROCESSED,
   ETH_PLAIN_SIGN,
   ETH_PLAIN_SIGN_PROCESSED,
   ETH_PLAIN_SIGN_FAILED,
+  ETH_SUBSCRIPTION_INCREASE_CLOCK,
+  ETH_INCREASE_CLOCK,
 } from "./actionTypes";
 import { selectEthCallTimestampByKey } from "./selectors";
 import {
@@ -109,14 +106,7 @@ export function* makeEthCall({ retry, address, abi, method, args, forceCall, max
     retry = (retry || 0) + 1;
     yield delay(ethereum.retry.timeout * retry);
     if (retry < ethereum.retry.count) {
-      yield put({
-        type: ETH_CALL,
-        retry: retry,
-        address: address,
-        abi: abi,
-        method: method,
-        args: args,
-      });
+      yield put({ type: ETH_CALL, retry: retry, address: address, abi: abi, method: method, args: args });
     } else {
       yield put({ type: ETH_CALL_FAIL, payload: error.message, call_key: key, error: true });
     }
@@ -169,35 +159,29 @@ export function* refreshAllSubscriptionsCalls() {
   const chainId = state.currentChain.id;
   const rpc = state.currentChain.rpc;
   const subscriptions = state.chainState[chainId]?.subscriptions;
-  const now = new Date().getTime();
-  const timestamp = state.timestamp;
-  if (timestamp === 0 || timestamp < now) {
-    const keyArray = new Set();
-    const ethCalls = new Set();
-    for (const key in subscriptions) {
-      const subscriptionArray = subscriptions[key];
+  const currentClock = state.currentClock;
+  const keyArray = new Set();
+  const ethCalls = [];
+  for (const subKey in subscriptions) {
+    const next = subscriptions[subKey].nextClock;
+    if (next === currentClock) {
+      const subscriptionArray = subscriptions[subKey].functions;
       for (const sub of subscriptionArray) {
         let key = sub.address + "_" + getEncodedCallFn(sub.address, sub.abi, sub.method, sub.args, rpc);
-        if (!keyArray.has(key)) ethCalls.add(sub);
+        if (!keyArray.has(key)) ethCalls.push(sub);
         keyArray.add(key);
       }
+      yield put({ type: ETH_SUBSCRIPTION_INCREASE_CLOCK, key: subKey });
     }
-
-    for (const call of Array.from(ethCalls)) {
-      yield put({
-        type: "ETH_CALL",
-        address: call.address,
-        abi: call.abi,
-        method: call.method,
-        args: call.args,
-      });
-    }
-    yield put({ type: SET_TIMESTAMP_TO_REFRESH, timestamp: now + 10000 });
   }
-}
 
-export function* makeEthComponentCalls() {
-  yield put({ type: SET_TIMESTAMP_TO_REFRESH, timestamp: 0 });
+  yield all(
+    ethCalls.map((call) =>
+      put({ type: ETH_CALL, address: call.address, abi: call.abi, method: call.method, args: call.args })
+    )
+  );
+
+  yield put({ type: ETH_INCREASE_CLOCK });
 }
 
 export function* makeEthEipSign({ domain, types, value }) {
@@ -224,39 +208,12 @@ export function* makeEthEipSign({ domain, types, value }) {
   }
 }
 
-export function* makeEthSiweSign({ key, message, userAddress, email, country, occupation, whitelist }) {
+export function* makeSign({ key, userAddress, message }) {
   const userState = yield select((state) => state.UserReducer);
   const addr = ethers.getAddress(userAddress);
   try {
-    const signatureHash = yield call(signMessage, userState, addr, message);
-    yield put({
-      type: ETH_SIWE_SIGN_PROCESSED,
-      key: key,
-      userAddress: addr,
-      signature: signatureHash,
-      message: message,
-      email: email,
-      country: country,
-      occupation: occupation,
-      whitelist: whitelist,
-    });
-  } catch (error) {
-    yield put({ type: ETH_SIWE_SIGN_FAILED, key: key, userAddress: addr, payload: error.message });
-  }
-}
-
-export function* makeSign({ key, message, userAddress }) {
-  const userState = yield select((state) => state.UserReducer);
-  const addr = ethers.getAddress(userAddress);
-  try {
-    const signatureHash = yield call(signMessage, userState, addr, message);
-    yield put({
-      type: ETH_PLAIN_SIGN_PROCESSED,
-      key: key,
-      userAddress: addr,
-      signature: signatureHash,
-      message: message,
-    });
+    const sign = yield call(signMessage, userState, addr, message);
+    yield put({ type: ETH_PLAIN_SIGN_PROCESSED, key: key, userAddress: addr, signature: sign, message: message });
   } catch (error) {
     yield put({ type: ETH_PLAIN_SIGN_FAILED, key: key, userAddress: addr, payload: error.message });
   }
@@ -264,12 +221,10 @@ export function* makeSign({ key, message, userAddress }) {
 
 export function* ethereumSaga() {
   yield takeEvery(ETH_CALL, makeEthCall);
-  yield takeEvery(ETH_ADD_SUBSCRIPTION, makeEthComponentCalls);
   yield takeEvery(ETH_DISPATCH_CLOCK, refreshAllSubscriptionsCalls);
   yield takeEvery(ETH_TRANSACT, makeEthTransact);
   yield takeEvery(ETH_TRANSACT_QUEUED, listenTransact);
   yield takeEvery(ETH_PLAIN_SIGN, makeSign);
-  yield takeEvery(ETH_SIWE_SIGN, makeEthSiweSign);
   yield takeEvery(ETH_EIP_712_SIGN, makeEthEipSign);
 }
 

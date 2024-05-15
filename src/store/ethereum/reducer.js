@@ -1,4 +1,4 @@
-import { getEncodedCallFn } from "../../package-index";
+import { defaultClock, getEncodedCallFn } from "../../package-index";
 
 import {
   ETH_CALL,
@@ -6,7 +6,6 @@ import {
   ETH_CALL_SUCCESS,
   ETH_ADD_SUBSCRIPTION,
   ETH_REMOVE_SUBSCRIPTION,
-  SET_TIMESTAMP_TO_REFRESH,
   ETH_TRANSACT,
   ETH_TRANSACT_QUEUED,
   ETH_TRANSACT_REJECTED,
@@ -16,20 +15,18 @@ import {
   ETH_EIP_712_SIGN,
   ETH_EIP_712_SIGN_FAILED,
   ETH_EIP_712_SIGN_PROCESSED,
-  ETH_SIWE_SIGN,
-  ETH_SIWE_SIGN_FAILED,
-  ETH_SIWE_SIGN_PROCESSED,
-  SET_ETH_SIWE_SIGN,
   ETH_PLAIN_SIGN,
   ETH_PLAIN_SIGN_PROCESSED,
   ETH_PLAIN_SIGN_FAILED,
   SET_USER_CURRENT_CHAIN,
+  ETH_SUBSCRIPTION_INCREASE_CLOCK,
+  ETH_INCREASE_CLOCK,
 } from "./actionTypes";
 
 const { ethers } = require("ethers");
 const INIT_STATE = {
-  timestamp: 0,
-  currentChain: { name: "Mumbai", id: 80001, rpc: "https://rpc.ankr.com/polygon_mumbai" },
+  currentClock: 0,
+  currentChain: { name: "Sepolia", id: 11155111, rpc: "https://ethereum-sepolia-rpc.publicnode.com" },
   chainState: {
     /*
      * <chainId>: {
@@ -49,7 +46,6 @@ const INIT_STATE = {
      *    },
      *    transacts: [],
      *    signs: {},
-     *    siweSigns: {},
      *    eipSigns: {},
      */
   },
@@ -96,7 +92,14 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_ADD_SUBSCRIPTION:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "subscriptions", action.key], () => action.componentEthCalls);
+      if (state.chainState[chainId]?.subscriptions.hasOwnProperty([action.key]))
+        throw new Error(`Subscription '${action.key}' already exists`);
+      const dict = {
+        functions: action.componentEthCalls,
+        clockCount: action.clockCount || defaultClock,
+        nextClock: state.currentClock,
+      };
+      state = modifyNode(state, ["chainState", chainId, "subscriptions", action.key], () => dict);
       break;
 
     case ETH_REMOVE_SUBSCRIPTION:
@@ -105,8 +108,16 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       state = { ...state, chainState: newChainState };
       break;
 
-    case SET_TIMESTAMP_TO_REFRESH:
-      state = { ...state, timestamp: action.timestamp };
+    case ETH_SUBSCRIPTION_INCREASE_CLOCK:
+      chainId = state.currentChain.id;
+      state = modifyNode(state, ["chainState", chainId, "subscriptions", action.key], (sub) => {
+        return { ...sub, nextClock: sub.nextClock + sub.clockCount };
+      });
+      break;
+
+    case ETH_INCREASE_CLOCK:
+      const newCount = state.currentClock + 1;
+      state = { ...state, currentClock: newCount };
       break;
 
     case ETH_TRANSACT:
@@ -150,40 +161,6 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       chainId = state.currentChain.id;
       state = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
         return (transacts || []).with(action.id, { ...transacts[action.id], state: "EXPIRED" });
-      });
-      break;
-
-    case ETH_SIWE_SIGN:
-      chainId = state.currentChain.id;
-      const siweKey = `${action.key}_${action.userAddress}`;
-      state = modifyNode(state, ["chainState", chainId, "siweSigns", siweKey], () => {
-        return { state: "PENDING" };
-      });
-      break;
-
-    case SET_ETH_SIWE_SIGN:
-    case ETH_SIWE_SIGN_PROCESSED:
-      chainId = state.currentChain.id;
-      const siweKeySuccess = `${action.key}_${action.userAddress}`;
-      state = modifyNode(state, ["chainState", chainId, "siweSigns", siweKeySuccess], () => {
-        return {
-          state: "SIGNED",
-          signature: action.signature,
-          message: action.message,
-          userAddress: action.userAddress,
-          email: action.email,
-          country: action.country,
-          occupation: action.occupation,
-          whitelist: action.whitelist,
-        };
-      });
-      break;
-
-    case ETH_SIWE_SIGN_FAILED:
-      chainId = state.currentChain.id;
-      const siweKeyFail = `${action.key}_${action.userAddress}`;
-      state = modifyNode(state, ["chainState", chainId, "siweSigns", siweKeyFail], (x) => {
-        return { ...x, state: "ERROR", error: action.payload };
       });
       break;
 

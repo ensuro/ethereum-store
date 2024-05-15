@@ -17,9 +17,10 @@ initializeEthereumStore({
   getFormatter,
   getSignerContract,
   getTxReceiptStatus,
-  selectChainId: () => 80001, // just for testing
+  selectChainId: () => 11155111, // just for testing
   selectProvider: () => {},
   selectUserAddress: () => "0x4d68cf31d613070b18e406afd6a42719a62a0785", // just for testing
+  clockCount: 15,
 });
 
 export default function* rootSaga() {

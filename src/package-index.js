@@ -8,6 +8,7 @@ let getAbiNameFn;
 let getFormatterFn;
 let getSignerContractFn;
 let getTxReceiptStatusFn;
+let defaultClock;
 
 // User
 let selectUserAddressFn;
@@ -26,6 +27,7 @@ export function initializeEthereumStore(options) {
     selectUserAddress,
     selectChainId,
     selectProvider,
+    clockCount,
   } = options;
 
   getEncodedCallFn = getEncodedCall;
@@ -38,6 +40,7 @@ export function initializeEthereumStore(options) {
   selectUserAddressFn = selectUserAddress;
   selectChainIdFn = selectChainId;
   selectProviderFn = selectProvider;
+  defaultClock = clockCount || 10;
 }
 
 export {
@@ -51,4 +54,5 @@ export {
   selectUserAddressFn,
   selectChainIdFn,
   selectProviderFn,
+  defaultClock,
 };
