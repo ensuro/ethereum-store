@@ -7,7 +7,7 @@ Ethereum store for react redux
 ## Install
 
 ```bash
-npm install --save ethereum-store
+npm install --save @ensuro/ethereum-store
 ```
 
 ## Configure
@@ -17,7 +17,7 @@ npm install --save ethereum-store
 In the `reducers.js` file:
 
 ```js
-import EthereumReducer from "ethereum-store/src/store/ethereum/reducer";
+import EthereumReducer from "@ensuro/ethereum-store/src/store/ethereum/reducer";
 
 export default combineReducers({
   // ...
@@ -30,7 +30,7 @@ export default combineReducers({
 In the `sagas.js` file:
 
 ```js
-import { ethereumSaga, initializeEthereumStore } from "ethereum-store/src/package-index";
+import { ethereumSaga, initializeEthereumStore } from "@ensuro/ethereum-store/src/package-index";
 
 const clockCount = 15;
 initializeEthereumStore({
