@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import { useDispatch } from "react-redux";
 // Import Routes all
@@ -6,7 +6,6 @@ import { userRoutes } from "./routes/allRoutes";
 
 function App() {
   let dispatch = useDispatch();
-  const mounted = useRef(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -17,11 +16,8 @@ function App() {
 
   // Initial useEffects
   useEffect(() => {
-    mounted.current = true;
-    dispatch({ type: "SET_USER_CURRENT_CHAIN", name: "Mumbai", id: 80001, rpc: "https://rpc.ankr.com/polygon_mumbai" });
-    return () => {
-      mounted.current = false;
-    };
+    const rpc = "https://ethereum-sepolia-rpc.publicnode.com";
+    dispatch({ type: "SET_USER_CURRENT_CHAIN", name: "Sepolia", id: 11155111, rpc: rpc });
   }, [dispatch]);
 
   return (

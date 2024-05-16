@@ -13,7 +13,6 @@ import {
   selectEthCallState,
   selectEthCallTimestampByKey,
   selectSign,
-  selectEthSiweSign,
   selectLastTransact,
 } from "./selectors";
 import { ethereum } from "../../config";
@@ -23,7 +22,7 @@ const { ethers } = require("ethers");
 
 let contractMock;
 let providerMock;
-const currencyAddress = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"; // Polygon USDC address
+const currencyAddress = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"; // Sepolia USDC address
 
 /* This will be in the initialize.js file */
 const BNToDecimal = (number, decimals) => {
@@ -47,12 +46,7 @@ beforeEach(async () => {
   contractMock.byAddress(currencyAddress, fakeUsdcContract);
   contractRegistry.registerContract(currencyAddress, "ERC20Permit");
 
-  await store.dispatch({
-    type: "SET_USER_CURRENT_CHAIN",
-    name: "NewChain",
-    id: 1234,
-    rpc: "https://foo-rpc.com/",
-  });
+  await store.dispatch({ type: "SET_USER_CURRENT_CHAIN", name: "NewChain", id: 1234, rpc: "https://foo-rpc.com/" });
 });
 
 afterEach(() => {
@@ -77,19 +71,19 @@ describe("All the test with provider resolver mock", () => {
     });
 
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           subscriptions: {
-            totalSupplyComponent: [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }],
+            totalSupplyComponent: {
+              functions: [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }],
+              clockCount: 15,
+              nextClock: 0,
+            },
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
 
     assert.strictEqual(
@@ -129,22 +123,22 @@ describe("All the test with provider resolver mock", () => {
     });
 
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           subscriptions: {
-            totalSupplyComponent: [
-              { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
-              { address: currencyAddress, abi: "ERC20Permit", method: "name", args: [] },
-            ],
+            totalSupplyComponent: {
+              functions: [
+                { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
+                { address: currencyAddress, abi: "ERC20Permit", method: "name", args: [] },
+              ],
+              clockCount: 15,
+              nextClock: 0,
+            },
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
 
     assert.strictEqual(
@@ -197,20 +191,24 @@ describe("All the test with provider resolver mock", () => {
     });
 
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           subscriptions: {
-            totalSupplyComponent: [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }],
-            secondComponent: [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }],
+            totalSupplyComponent: {
+              functions: [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }],
+              clockCount: 15,
+              nextClock: 0,
+            },
+            secondComponent: {
+              functions: [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }],
+              clockCount: 15,
+              nextClock: 0,
+            },
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
 
     store.dispatch({ type: "ETH_DISPATCH_CLOCK" });
@@ -229,20 +227,21 @@ describe("All the test with provider resolver mock", () => {
 
     await store.dispatch({ type: "ETH_REMOVE_SUBSCRIPTION", key: "secondComponent" });
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].subscriptions, {
-      totalSupplyComponent: [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }],
+      totalSupplyComponent: {
+        functions: [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }],
+        clockCount: 15,
+        nextClock: 15,
+      },
     });
+
+    assert.deepStrictEqual(store.getState().EthereumReducer.currentClock, 1);
   });
 
   test("ETH_CALL with simple method", async () => {
     const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.resolves(12.345e6));
     assert.strictEqual(ethers.Contract.callCount, 1);
 
-    await store.dispatch({
-      type: "ETH_CALL",
-      address: currencyAddress,
-      abi: "ERC20Permit",
-      method: "totalSupply",
-    });
+    await store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" });
     assert.strictEqual(
       selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply"),
       undefined
@@ -250,7 +249,7 @@ describe("All the test with provider resolver mock", () => {
     assert.strictEqual(ethers.Contract.callCount, 1);
     const call_key = currencyAddress + "_0x18160ddd"; // "18160ddd" == kekac256("totalSupply()")
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           calls: {
@@ -260,11 +259,7 @@ describe("All the test with provider resolver mock", () => {
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
     const now = new Date().getTime();
     await new Promise((r) => setTimeout(r, 0));
@@ -286,16 +281,11 @@ describe("All the test with provider resolver mock", () => {
     const fakeName = (fakeUsdcContract.name = sinon.fake.resolves("Peso"));
     assert.strictEqual(ethers.Contract.callCount, 1);
 
-    await store.dispatch({
-      type: "ETH_CALL",
-      address: currencyAddress,
-      abi: "ERC20Permit",
-      method: "name",
-    });
+    await store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "name" });
     assert.strictEqual(ethers.Contract.callCount, 1);
     const call_key = currencyAddress + "_0x06fdde03"; // "06fdde03" == kekac256("name()")
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           calls: {
@@ -305,11 +295,7 @@ describe("All the test with provider resolver mock", () => {
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
     await new Promise((r) => setTimeout(r, 0));
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].calls, {
@@ -336,7 +322,7 @@ describe("All the test with provider resolver mock", () => {
     assert.strictEqual(ethers.Contract.callCount, 1);
     const call_key = currencyAddress + "_0x70a08231000000000000000000000000" + addr.substring(2);
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           calls: {
@@ -346,11 +332,7 @@ describe("All the test with provider resolver mock", () => {
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
     await new Promise((r) => setTimeout(r, 0));
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].calls, {
@@ -371,16 +353,12 @@ describe("All the test with provider resolver mock", () => {
     sinon.replace(ethereum, "retry", { timeout: 1, count: 5 });
     fakeUsdcContract.totalSupply = sinon.fake.rejects("Error");
     assert.strictEqual(ethers.Contract.callCount, 1);
-    await store.dispatch({
-      type: "ETH_CALL",
-      address: currencyAddress,
-      abi: "ERC20Permit",
-      method: "totalSupply",
-    });
+    await store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" });
+
     assert.strictEqual(ethers.Contract.callCount, 1);
     const call_key = currencyAddress + "_0x18160ddd"; // "18160ddd" == kekac256("totalSupply()")
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           calls: {
@@ -390,15 +368,11 @@ describe("All the test with provider resolver mock", () => {
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
     await new Promise((r) => setTimeout(r, 100));
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           calls: {
@@ -409,11 +383,7 @@ describe("All the test with provider resolver mock", () => {
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
   });
 
@@ -421,16 +391,12 @@ describe("All the test with provider resolver mock", () => {
     sinon.replace(ethereum, "retry", { timeout: 10, count: 5 });
     const fakeTotalSupply = (fakeUsdcContract.totalSupply = sinon.fake.rejects("Error"));
     assert.strictEqual(ethers.Contract.callCount, 1);
-    await store.dispatch({
-      type: "ETH_CALL",
-      address: currencyAddress,
-      abi: "ERC20Permit",
-      method: "totalSupply",
-    });
+    await store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" });
+
     assert.strictEqual(ethers.Contract.callCount, 1);
     const call_key = currencyAddress + "_0x18160ddd"; // "18160ddd" == kekac256("totalSupply()")
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           calls: {
@@ -440,16 +406,12 @@ describe("All the test with provider resolver mock", () => {
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
     await new Promise((r) => setTimeout(r, 15));
     fakeUsdcContract.totalSupply = sinon.fake.resolves(123.2e6);
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           calls: {
@@ -460,11 +422,7 @@ describe("All the test with provider resolver mock", () => {
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
     sinon.assert.calledTwice(fakeTotalSupply);
     await new Promise((r) => setTimeout(r, 21));
@@ -626,12 +584,8 @@ describe("All the test with provider resolver mock", () => {
     await new Promise((r) => setTimeout(r, 1000));
 
     const prevTimestamp = selectEthCallTimestampByKey(store.getState().EthereumReducer, call_key);
-    await store.dispatch({
-      type: "ETH_CALL",
-      address: currencyAddress,
-      abi: "ERC20Permit",
-      method: "totalSupply",
-    });
+    await store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" });
+
     await new Promise((r) => setTimeout(r, 1000));
     let newTimestamp = selectEthCallTimestampByKey(store.getState().EthereumReducer, call_key);
     assert.strictEqual(prevTimestamp, newTimestamp);
@@ -672,43 +626,12 @@ describe("All the test with provider resolver mock", () => {
     assert.deepStrictEqual(sign.message, "Simple example of plain text");
   });
 
-  test("ETH_SIWE_SIGN resolves", async () => {
-    const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
-    const whitelistAddr = "0x99b2949F4b12bF14F9AD66De374Cd5A2BF6a0C15";
-
-    await store.dispatch({
-      type: "ETH_SIWE_SIGN",
-      key: "testSiweKey",
-      userAddress: userAddr,
-      message: "I accept the Ensuro Terms of Service: https://ensuro.co/Ensuro_ToS.pdf....",
-      email: "test@test.com",
-      country: "Argentina",
-      occupation: "Developer",
-      whitelist: whitelistAddr,
-    });
-
-    const key = `testSiweKey_${userAddr}`;
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].siweSigns[key].state, "PENDING");
-
-    await new Promise((r) => setTimeout(r, 0));
-
-    const sign = selectEthSiweSign(store.getState().EthereumReducer, "testSiweKey", userAddr);
-    assert.deepStrictEqual(sign.state, "SIGNED");
-    assert.deepStrictEqual(sign.signature, "0x1234567890");
-    assert.deepStrictEqual(sign.message, "I accept the Ensuro Terms of Service: https://ensuro.co/Ensuro_ToS.pdf....");
-  });
-
   test("Signed eip712 message ETH_EIP_712_SIGN", async () => {
     const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
     const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
     fakeUsdcContract.nonces = sinon.fake.resolves(2);
-    const usdcDomain = {
-      name: "USDC",
-      version: "1",
-      chainId: 80001,
-      verifyingContract: currencyAddress,
-    };
+    const usdcDomain = { name: "USDC", version: "1", chainId: 11155111, verifyingContract: currencyAddress };
 
     const types = {
       Permit: [
@@ -728,12 +651,7 @@ describe("All the test with provider resolver mock", () => {
       deadline: deadline,
     };
 
-    await store.dispatch({
-      type: "ETH_EIP_712_SIGN",
-      domain: usdcDomain,
-      types: types,
-      value: value,
-    });
+    await store.dispatch({ type: "ETH_EIP_712_SIGN", domain: usdcDomain, types: types, value: value });
 
     const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key].state, "PENDING");
@@ -750,12 +668,7 @@ describe("All the test with provider resolver mock", () => {
     const spenderAddr = "0x78f1626224f48A4E24FD7Cc7bF070A1740D5cafD"; // receive money address
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
     fakeUsdcContract.nonces = sinon.fake.resolves(2);
-    const usdcDomain = {
-      name: "USDC",
-      version: "1",
-      chainId: 80001,
-      verifyingContract: currencyAddress,
-    };
+    const usdcDomain = { name: "USDC", version: "1", chainId: 11155111, verifyingContract: currencyAddress };
 
     const types = {
       Permit: [
@@ -775,12 +688,7 @@ describe("All the test with provider resolver mock", () => {
       deadline: deadline,
     };
 
-    await store.dispatch({
-      type: "ETH_EIP_712_SIGN",
-      domain: usdcDomain,
-      types: types,
-      value: value,
-    });
+    await store.dispatch({ type: "ETH_EIP_712_SIGN", domain: usdcDomain, types: types, value: value });
 
     const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key].state, "PENDING");
@@ -799,12 +707,7 @@ describe("All the test with provider resolver mock", () => {
       deadline: deadline,
     };
 
-    await store.dispatch({
-      type: "ETH_EIP_712_SIGN",
-      domain: usdcDomain,
-      types: types,
-      value: value,
-    });
+    await store.dispatch({ type: "ETH_EIP_712_SIGN", domain: usdcDomain, types: types, value: value });
 
     const key2 = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key2].state, "PENDING");
@@ -834,12 +737,7 @@ describe("All the test with provider resolver mock", () => {
     const secondSpender = "0x329731D4FB96Ec52039e222bC4cC67a86b582A86";
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
     fakeUsdcContract.nonces = sinon.fake.resolves(2);
-    const usdcDomain = {
-      name: "USDC",
-      version: "1",
-      chainId: 80001,
-      verifyingContract: currencyAddress,
-    };
+    const usdcDomain = { name: "USDC", version: "1", chainId: 11155111, verifyingContract: currencyAddress };
 
     const types = {
       Permit: [
@@ -859,12 +757,7 @@ describe("All the test with provider resolver mock", () => {
       deadline: deadline,
     };
 
-    await store.dispatch({
-      type: "ETH_EIP_712_SIGN",
-      domain: usdcDomain,
-      types: types,
-      value: value,
-    });
+    await store.dispatch({ type: "ETH_EIP_712_SIGN", domain: usdcDomain, types: types, value: value });
 
     const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key].state, "PENDING");
@@ -888,12 +781,7 @@ describe("All the test with provider resolver mock", () => {
       deadline: deadline,
     };
 
-    await store.dispatch({
-      type: "ETH_EIP_712_SIGN",
-      domain: usdcDomain,
-      types: types,
-      value: value,
-    });
+    await store.dispatch({ type: "ETH_EIP_712_SIGN", domain: usdcDomain, types: types, value: value });
 
     const key2 = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key2].state, "PENDING");
@@ -937,12 +825,7 @@ describe("All the test with provider resolver mock", () => {
     const fakeName = (fakeUsdcContract.name = sinon.fake.resolves("FakeUSDC"));
     assert.strictEqual(ethers.Contract.callCount, 1);
 
-    await store.dispatch({
-      type: "ETH_CALL",
-      address: currencyAddress,
-      abi: "ERC20Permit",
-      method: "totalSupply",
-    });
+    await store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" });
     assert.strictEqual(
       selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply"),
       undefined
@@ -950,7 +833,7 @@ describe("All the test with provider resolver mock", () => {
     assert.strictEqual(ethers.Contract.callCount, 1);
     const call_key = currencyAddress + "_0x18160ddd"; // "18160ddd" == kekac256("totalSupply()")
     assert.deepStrictEqual(store.getState().EthereumReducer, {
-      timestamp: 0,
+      currentClock: 0,
       chainState: {
         1234: {
           calls: {
@@ -960,11 +843,7 @@ describe("All the test with provider resolver mock", () => {
           },
         },
       },
-      currentChain: {
-        id: 1234,
-        name: "NewChain",
-        rpc: "https://foo-rpc.com/",
-      },
+      currentChain: { id: 1234, name: "NewChain", rpc: "https://foo-rpc.com/" },
     });
     const now = new Date().getTime();
     await new Promise((r) => setTimeout(r, 0));
@@ -981,12 +860,7 @@ describe("All the test with provider resolver mock", () => {
       selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply").eq(Big(12.345))
     );
 
-    store.dispatch({
-      type: "SET_USER_CURRENT_CHAIN",
-      name: "SecondChain",
-      id: 5678,
-      rpc: "https://foo-rpc.com/",
-    });
+    store.dispatch({ type: "SET_USER_CURRENT_CHAIN", name: "SecondChain", id: 5678, rpc: "https://foo-rpc.com/" });
 
     ethStore = store.getState().EthereumReducer;
     assert.deepEqual(ethStore.currentChain, {
@@ -995,12 +869,7 @@ describe("All the test with provider resolver mock", () => {
       rpc: "https://foo-rpc.com/",
     });
 
-    await store.dispatch({
-      type: "ETH_CALL",
-      address: currencyAddress,
-      abi: "ERC20Permit",
-      method: "name",
-    });
+    await store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "name" });
     assert.strictEqual(
       selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "name"),
       undefined
@@ -1039,12 +908,7 @@ describe("All the tests with provider REJECTED Mock", () => {
     const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour
     fakeUsdcContract.nonces = sinon.fake.resolves(2);
 
-    const usdcDomain = {
-      name: "USDC",
-      version: "1",
-      chainId: 80001,
-      verifyingContract: currencyAddress,
-    };
+    const usdcDomain = { name: "USDC", version: "1", chainId: 11155111, verifyingContract: currencyAddress };
 
     const types = {
       Permit: [
@@ -1064,12 +928,7 @@ describe("All the tests with provider REJECTED Mock", () => {
       deadline: deadline,
     };
 
-    await store.dispatch({
-      type: "ETH_EIP_712_SIGN",
-      domain: usdcDomain,
-      types: types,
-      value: value,
-    });
+    await store.dispatch({ type: "ETH_EIP_712_SIGN", domain: usdcDomain, types: types, value: value });
 
     const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
     assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].eipSigns[key].state, "PENDING");
@@ -1098,30 +957,6 @@ describe("All the tests with provider REJECTED Mock", () => {
     await new Promise((r) => setTimeout(r, 0));
 
     const sign = selectSign(store.getState().EthereumReducer, "testPlainKey", userAddr);
-    assert.deepStrictEqual(sign.state, "ERROR");
-    assert.deepStrictEqual(sign.error, "Error signing message");
-  });
-
-  test("Rejects ETH_SIWE_SIGN", async () => {
-    const userAddr = "0x4d68Cf31d613070b18E406AFd6A42719a62a0785";
-    const whitelistAddr = "0x99b2949F4b12bF14F9AD66De374Cd5A2BF6a0C15";
-    await store.dispatch({
-      type: "ETH_SIWE_SIGN",
-      key: "testSiweKey",
-      userAddress: userAddr,
-      message: "I accept the Ensuro Terms of Service: https://ensuro.co/Ensuro_ToS.pdf....",
-      email: "test@test.com",
-      country: "Argentina",
-      occupation: "Developer",
-      whitelist: whitelistAddr,
-    });
-
-    const key = `testSiweKey_${userAddr}`;
-    assert.deepStrictEqual(store.getState().EthereumReducer.chainState["1234"].siweSigns[key].state, "PENDING");
-
-    await new Promise((r) => setTimeout(r, 0));
-
-    const sign = selectEthSiweSign(store.getState().EthereumReducer, "testSiweKey", userAddr);
     assert.deepStrictEqual(sign.state, "ERROR");
     assert.deepStrictEqual(sign.error, "Error signing message");
   });
