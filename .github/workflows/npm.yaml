@@ -34,10 +34,6 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - run: npm ci
-      - run: npm run build:lib # create the ./lib directory with the files to publish
-      - run: sed "s/%%VERSION%%/$VERSION/" package.json > "./lib/package.json"
-
       - id: semver
         run: |
           SEMVER="${{ github.event.inputs.version }}"
@@ -46,6 +42,10 @@ jobs:
             SEMVER="${GITHUB_REF/refs\/tags\/v/}"
           fi
           echo "::set-output name=semver::${SEMVER}"
+
+      - run: npm ci
+      - run: npm version --no-git-tag-version "${{ steps.semver.outputs.semver }}"
+      - run: npm run build:lib # create the ./lib directory with the files to publish
 
       - run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_AUTOMATION_TOKEN }}" > ./lib/.npmrc
 
