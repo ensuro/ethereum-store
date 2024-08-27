@@ -165,13 +165,20 @@ describe("All the test with provider resolver mock", () => {
     sinon.assert.calledOnce(fakeTotalSupply);
     sinon.assert.calledOnce(fakeName);
 
-    const [totalSupply, name] = selectEthCallMultiple(store.getState().EthereumReducer, [
+    const makeEthCalls = () => [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
       { address: currencyAddress, abi: "ERC20Permit", method: "name", args: [] },
-    ]);
+    ];
+
+    const [totalSupply, name] = selectEthCallMultiple(store.getState().EthereumReducer, makeEthCalls());
 
     assert.ok(totalSupply.value.eq(Big(12.345)));
     assert(name.value === "Peso");
+
+    // Check that the selector returns the same object for the same input
+    const [newTotalSupply, newName] = selectEthCallMultiple(store.getState().EthereumReducer, makeEthCalls());
+    assert.strictEqual(totalSupply, newTotalSupply);
+    assert.strictEqual(name, newName);
   });
 
   test("Only ONE call with TWO subscritions to the SAME METHOD", async () => {
@@ -856,8 +863,14 @@ describe("All the test with provider resolver mock", () => {
     });
     assert(now - ethStore.chainState["1234"].call_metadata[call_key].timestamp < 100);
     sinon.assert.calledOnce(fakeTotalSupply);
-    assert.ok(
-      selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply").eq(Big(12.345))
+
+    const ethCall = selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply");
+    assert.ok(ethCall.eq(Big(12.345)));
+
+    // Check that the selector returns the same object every time
+    assert.strictEqual(
+      ethCall,
+      selectEthCall(store.getState().EthereumReducer, currencyAddress, "ERC20Permit", "totalSupply")
     );
 
     store.dispatch({ type: "SET_USER_CURRENT_CHAIN", name: "SecondChain", id: 5678, rpc: "https://foo-rpc.com/" });

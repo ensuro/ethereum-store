@@ -1,8 +1,10 @@
 import _ from "lodash";
-import { createSelector } from "reselect";
+import { createSelector, createSelectorCreator, defaultMemoize } from "reselect";
 import { getEncodedCallFn } from "../../package-index";
 
 const { ethers } = require("ethers");
+
+const createDeepEqualSelector = createSelectorCreator(defaultMemoize, _.isEqual);
 
 const getCurrentChain = (state) => state.currentChain;
 const getChainState = (state) => state.chainState;
@@ -75,7 +77,7 @@ export const selectEthCallState = createSelector(
   (calls, callKey) => calls[callKey] && calls[callKey].state
 );
 
-export const selectEthCallMultiple = createSelector([getChainStateCalls, getCallKeys], (calls, callKeys) => {
+export const selectEthCallMultiple = createDeepEqualSelector([getChainStateCalls, getCallKeys], (calls, callKeys) => {
   return _.map(callKeys, (callKey) => {
     return !calls || calls[callKey] === undefined ? {} : { value: calls[callKey].value, state: calls[callKey].state };
   });
