@@ -53,27 +53,37 @@ describe("selectEthCallMultiple", () => {
     const callKey = getCallKey(state, currencyAddress, "ERC20Permit", "totalSupply", ...[]);
 
     expect(callKey).toEqual(`${currencyAddress}_${expectedEncodedCall}`);
-
-  })
+  });
 
   test("should return EMPTYSTATE when no calls are present", async () => {
-
     const result = selectEthCallMultiple(store.getState().EthereumReducer, []);
-    expect(result).toEqual([]); 
+    expect(result).toEqual([]);
   });
 
   test("should return the corresponding calls when present with actions", async () => {
-    const call_key = getCallKey({currentChain: { id: 1234, rpc: "https://foo-rpc.com/" }}, currencyAddress, "ERC20Permit", "totalSupply", ...[]);
+    const call_key = getCallKey(
+      { currentChain: { id: 1234, rpc: "https://foo-rpc.com/" } },
+      currencyAddress,
+      "ERC20Permit",
+      "totalSupply",
+      ...[]
+    );
     store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" });
-    
-    let result = selectEthCallMultiple(store.getState().EthereumReducer, [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }]);
+
+    let result = selectEthCallMultiple(store.getState().EthereumReducer, [
+      { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
+    ]);
     expect(result).toEqual([{ state: "LOADING" }]);
 
-    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key:call_key, value: 1000, timestamp:new Date().getTime() });
-    result = selectEthCallMultiple(store.getState().EthereumReducer, [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }]);
-    expect(result).toEqual([{state: "LOADED", value: 1000}])
-    let result2 = selectEthCallMultiple(store.getState().EthereumReducer, [{ address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] }]);
-    assert.strictEqual(result[0], result2[0])
+    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key: call_key, value: 1000, timestamp: new Date().getTime() });
+    result = selectEthCallMultiple(store.getState().EthereumReducer, [
+      { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
+    ]);
+    expect(result).toEqual([{ state: "LOADED", value: 1000 }]);
+    let result2 = selectEthCallMultiple(store.getState().EthereumReducer, [
+      { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
+    ]);
+    assert.strictEqual(result[0], result2[0]);
   });
 
   test("should handle multiple calls with different states", async () => {
@@ -104,27 +114,55 @@ describe("selectEthCallMultiple", () => {
     });
     let result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
-      { address: currencyAddress, abi: "ERC20Permit", method: "balanceOf", args: ["0x4d68Cf31d613070b18E406AFd6A42719a62a0785"] },
+      {
+        address: currencyAddress,
+        abi: "ERC20Permit",
+        method: "balanceOf",
+        args: ["0x4d68Cf31d613070b18E406AFd6A42719a62a0785"],
+      },
     ]);
     expect(result).toEqual([{ state: "LOADING" }, { state: "LOADING" }]);
 
-    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key: totalSupplyCallKey, value: 1000, timestamp: new Date().getTime() });
+    store.dispatch({
+      type: "ETH_CALL_SUCCESS",
+      call_key: totalSupplyCallKey,
+      value: 1000,
+      timestamp: new Date().getTime(),
+    });
 
     result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
-      { address: currencyAddress, abi: "ERC20Permit", method: "balanceOf", args: ["0x4d68Cf31d613070b18E406AFd6A42719a62a0785"] },
+      {
+        address: currencyAddress,
+        abi: "ERC20Permit",
+        method: "balanceOf",
+        args: ["0x4d68Cf31d613070b18E406AFd6A42719a62a0785"],
+      },
     ]);
 
     expect(result).toEqual([{ state: "LOADED", value: 1000 }, { state: "LOADING" }]);
 
-    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key: balanceOfCallKey, value: 500, timestamp: new Date().getTime() });
-    
+    store.dispatch({
+      type: "ETH_CALL_SUCCESS",
+      call_key: balanceOfCallKey,
+      value: 500,
+      timestamp: new Date().getTime(),
+    });
+
     result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
-      { address: currencyAddress, abi: "ERC20Permit", method: "balanceOf", args: ["0x4d68Cf31d613070b18E406AFd6A42719a62a0785"] },
+      {
+        address: currencyAddress,
+        abi: "ERC20Permit",
+        method: "balanceOf",
+        args: ["0x4d68Cf31d613070b18E406AFd6A42719a62a0785"],
+      },
     ]);
 
-    expect(result).toEqual([{ state: "LOADED", value: 1000 }, { state: "LOADED", value: 500 }]);
+    expect(result).toEqual([
+      { state: "LOADED", value: 1000 },
+      { state: "LOADED", value: 500 },
+    ]);
   });
 
   test("should replace existing call value with new value", async () => {
@@ -137,21 +175,21 @@ describe("selectEthCallMultiple", () => {
     );
 
     store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" });
-    
+
     store.dispatch({ type: "ETH_CALL_SUCCESS", call_key: call_key, value: 1000, timestamp: new Date().getTime() });
-    
+
     let result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
     ]);
-  
+
     expect(result).toEqual([{ state: "LOADED", value: 1000 }]);
-  
+
     store.dispatch({ type: "ETH_CALL_SUCCESS", call_key: call_key, value: 2000, timestamp: new Date().getTime() });
-  
+
     result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
     ]);
-  
+
     expect(result).toEqual([{ state: "LOADED", value: 2000 }]);
 
     expect(result[0].value).not.toBe(1000);

@@ -4,7 +4,7 @@ import { getEncodedCallFn } from "../../package-index";
 
 const { ethers } = require("ethers");
 
-const EMPTYSTATE = {}
+const EMPTYSTATE = {};
 
 const getCurrentChain = (state) => state.currentChain;
 const getChainState = (state) => state.chainState;
