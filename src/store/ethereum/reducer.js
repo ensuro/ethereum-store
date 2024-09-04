@@ -77,11 +77,15 @@ const EthereumReducer = (state = INIT_STATE, action) => {
     case ETH_CALL_SUCCESS:
       chainId = state.currentChain.id;
       state = modifyNode(state, ["chainState", chainId, "call_metadata", action.call_key], (metadata) => {
-        if (metadata.timestamp && state.chainState[chainId].calls[action.call_key].state === "LOADED") return metadata;
+        if (
+          metadata.timestamp === action.timestamp &&
+          state.chainState[chainId].calls[action.call_key].state === "LOADED"
+        )
+          return metadata;
         return { timestamp: action.timestamp };
       });
       state = modifyNode(state, ["chainState", chainId, "calls", action.call_key], (call) => {
-        if (call.state === "LOADED" && call.retries === undefined) return call;
+        if (call.state === "LOADED" && call.retries === undefined && call.value === action.value) return call;
         return { state: "LOADED", value: action.value };
       });
       break;
