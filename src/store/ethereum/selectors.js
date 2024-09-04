@@ -4,6 +4,8 @@ import { getEncodedCallFn } from "../../package-index";
 
 const { ethers } = require("ethers");
 
+const EMPTYSTATE = {};
+
 const getCurrentChain = (state) => state.currentChain;
 const getChainState = (state) => state.chainState;
 
@@ -41,7 +43,7 @@ const getSignKey = (__, key, address) => {
   return `${key}_${address}`;
 };
 
-const getCallKey = (state, address, abiName, method, ...args) => {
+export const getCallKey = (state, address, abiName, method, ...args) => {
   const rpc = state.currentChain.rpc;
   return address + "_" + getEncodedCallFn(address, abiName, method, args, rpc);
 };
@@ -77,7 +79,7 @@ export const selectEthCallState = createSelector(
 
 export const selectEthCallMultiple = createSelector([getChainStateCalls, getCallKeys], (calls, callKeys) => {
   return _.map(callKeys, (callKey) => {
-    return !calls || calls[callKey] === undefined ? {} : { value: calls[callKey].value, state: calls[callKey].state };
+    return !calls || calls[callKey] === undefined ? EMPTYSTATE : calls[callKey];
   });
 });
 

@@ -66,6 +66,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       let rpc = state.currentChain.rpc;
       let key = action.address + "_" + getEncodedCallFn(action.address, action.abi, action.method, action.args, rpc);
       state = modifyNode(state, ["chainState", chainId, "calls", key], (call) => {
+        if (call !== undefined && call.state === "LOADED" && call.retries === undefined) return call;
         call = call || {};
         call.state = call.state !== "LOADED" ? "LOADING" : call.state;
         if (action.retry !== undefined) call.retries = action.retry;
@@ -78,7 +79,9 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       state = modifyNode(state, ["chainState", chainId, "call_metadata", action.call_key], () => {
         return { timestamp: action.timestamp };
       });
-      state = modifyNode(state, ["chainState", chainId, "calls", action.call_key], () => {
+      state = modifyNode(state, ["chainState", chainId, "calls", action.call_key], (call) => {
+        if (call !== undefined && call.state === "LOADED" && call.retries === undefined && call.value === action.value)
+          return call;
         return { state: "LOADED", value: action.value };
       });
       break;
