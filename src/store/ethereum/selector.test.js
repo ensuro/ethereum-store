@@ -21,21 +21,6 @@ contractRegistry.registerContract(currencyAddress, "ERC20Permit");
 contractRegistry.registerFormatter("ERC20Permit", "totalSupply", _.partial(BNToDecimal, _, 6));
 contractRegistry.registerFormatter("ERC20Permit", "balanceOf", _.partial(BNToDecimal, _, 6));
 
-const usdcContract = contractRegistry.getContract(currencyAddress);
-let fakeUsdcContract = {};
-
-beforeEach(async () => {
-  store.dispatch({ type: "RESET_ALL" });
-  contractMock = sinon.spy(mock_helper.mockContractFn());
-  sinon.replaceGetter(ethers, "Contract", () => contractMock);
-
-  fakeUsdcContract = { interface: usdcContract.interface };
-  contractMock.byAddress(currencyAddress, fakeUsdcContract);
-  contractRegistry.registerContract(currencyAddress, "ERC20Permit");
-
-  await store.dispatch({ type: "SET_USER_CURRENT_CHAIN", name: "NewChain", id: 1234, rpc: "https://foo-rpc.com/" });
-});
-
 afterEach(() => {
   store.dispatch({ type: "RESET_ALL" });
   sinon.restore();
@@ -56,6 +41,7 @@ describe("selectEthCallMultiple", () => {
   });
 
   test("should return EMPTYSTATE when no calls are present", async () => {
+    await store.dispatch({ type: "SET_USER_CURRENT_CHAIN", name: "NewChain", id: 1234, rpc: "https://foo-rpc.com/" });
     const result = selectEthCallMultiple(store.getState().EthereumReducer, []);
     expect(result).toEqual([]);
   });
