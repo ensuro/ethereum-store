@@ -2,14 +2,11 @@ import _ from "lodash";
 import Big from "big.js";
 import store from "../index.js";
 import assert from "assert";
-import * as mock_helper from "../../helpers/mock_helper";
 import * as contractRegistry from "../../helpers/contractRegistry";
 import { selectEthCallMultiple, getCallKey } from "./selectors";
 
 const sinon = require("sinon");
-const { ethers } = require("ethers");
 
-let contractMock;
 const currencyAddress = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"; // Sepolia USDC address
 
 const BNToDecimal = (number, decimals) => {
