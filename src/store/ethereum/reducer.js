@@ -59,13 +59,14 @@ function modifyNode(state, path, newValueFn) {
 }
 
 const EthereumReducer = (state = INIT_STATE, action) => {
+  let newState = state;
   let chainId;
   switch (action.type) {
     case ETH_CALL:
       chainId = state.currentChain.id;
       let rpc = state.currentChain.rpc;
       let key = action.address + "_" + getEncodedCallFn(action.address, action.abi, action.method, action.args, rpc);
-      state = modifyNode(state, ["chainState", chainId, "calls", key], (call) => {
+      newState = modifyNode(state, ["chainState", chainId, "calls", key], (call) => {
         if (call !== undefined && call.state === "LOADED" && call.retries === undefined) return call;
         call = call || {};
         call.state = call.state !== "LOADED" ? "LOADING" : call.state;
@@ -76,10 +77,10 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_CALL_SUCCESS:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "call_metadata", action.call_key], () => {
+      newState = modifyNode(state, ["chainState", chainId, "call_metadata", action.call_key], () => {
         return { timestamp: action.timestamp };
       });
-      state = modifyNode(state, ["chainState", chainId, "calls", action.call_key], (call) => {
+      newState = modifyNode(newState, ["chainState", chainId, "calls", action.call_key], (call) => {
         if (call !== undefined && call.state === "LOADED" && call.retries === undefined && call.value === action.value)
           return call;
         return { state: "LOADED", value: action.value };
@@ -88,7 +89,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_CALL_FAIL:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "calls", action.call_key], (x) => {
+      newState = modifyNode(state, ["chainState", chainId, "calls", action.call_key], (x) => {
         return { ...x, state: "ERROR" };
       });
       break;
@@ -102,30 +103,30 @@ const EthereumReducer = (state = INIT_STATE, action) => {
         clockCount: action.clockCount || defaultClock,
         nextClock: state.currentClock,
       };
-      state = modifyNode(state, ["chainState", chainId, "subscriptions", action.key], () => dict);
+      newState = modifyNode(state, ["chainState", chainId, "subscriptions", action.key], () => dict);
       break;
 
     case ETH_REMOVE_SUBSCRIPTION:
       let newChainState = { ...state.chainState };
       delete newChainState[state.currentChain.id]?.subscriptions[action.key];
-      state = { ...state, chainState: newChainState };
+      newState = { ...state, chainState: newChainState };
       break;
 
     case ETH_SUBSCRIPTION_INCREASE_CLOCK:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "subscriptions", action.key], (sub) => {
+      newState = modifyNode(state, ["chainState", chainId, "subscriptions", action.key], (sub) => {
         return { ...sub, nextClock: sub.nextClock + sub.clockCount };
       });
       break;
 
     case ETH_INCREASE_CLOCK:
       const newCount = state.currentClock + 1;
-      state = { ...state, currentClock: newCount };
+      newState = { ...state, currentClock: newCount };
       break;
 
     case ETH_TRANSACT:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId], (x) => {
+      newState = modifyNode(state, ["chainState", chainId], (x) => {
         x.transacts = [...(x.transacts || []), { address: action.address, method: action.method, args: action.args }];
         return x;
       });
@@ -133,7 +134,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_TRANSACT_QUEUED:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
+      newState = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
         return (transacts || []).with(action.id, { ...transacts[action.id], txHash: action.txHash, state: "QUEUED" });
       });
 
@@ -141,28 +142,28 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_TRANSACT_REJECTED:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
+      newState = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
         return (transacts || []).with(action.id, { ...transacts[action.id], error: action.payload, state: "REJECTED" });
       });
       break;
 
     case ETH_TRANSACT_MINED:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
+      newState = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
         return (transacts || []).with(action.id, { ...transacts[action.id], state: "MINED" });
       });
       break;
 
     case ETH_TRANSACT_REVERTED:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
+      newState = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
         return (transacts || []).with(action.id, { ...transacts[action.id], state: "REVERTED" });
       });
       break;
 
     case ETH_TRANSACT_EXPIRED:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
+      newState = modifyNode(state, ["chainState", chainId, "transacts"], (transacts) => {
         return (transacts || []).with(action.id, { ...transacts[action.id], state: "EXPIRED" });
       });
       break;
@@ -170,14 +171,14 @@ const EthereumReducer = (state = INIT_STATE, action) => {
     case ETH_EIP_712_SIGN:
       chainId = state.currentChain.id;
       const eipKey = ethers.TypedDataEncoder.encode(action.domain, action.types, action.value);
-      state = modifyNode(state, ["chainState", chainId, "eipSigns", eipKey], () => {
+      newState = modifyNode(state, ["chainState", chainId, "eipSigns", eipKey], () => {
         return { state: "PENDING" };
       });
       break;
 
     case ETH_EIP_712_SIGN_PROCESSED:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "eipSigns", action.key], () => {
+      newState = modifyNode(state, ["chainState", chainId, "eipSigns", action.key], () => {
         return {
           state: "SIGNED",
           userAddress: action.userAddress,
@@ -191,7 +192,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_EIP_712_SIGN_FAILED:
       chainId = state.currentChain.id;
-      state = modifyNode(state, ["chainState", chainId, "eipSigns", action.key], (x) => {
+      newState = modifyNode(state, ["chainState", chainId, "eipSigns", action.key], (x) => {
         return { ...x, state: "ERROR", error: action.payload, userAddress: action.userAddress };
       });
       break;
@@ -199,7 +200,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
     case ETH_PLAIN_SIGN:
       chainId = state.currentChain.id;
       const plainKey = `${action.key}_${action.userAddress}`;
-      state = modifyNode(state, ["chainState", chainId, "signs", plainKey], () => {
+      newState = modifyNode(state, ["chainState", chainId, "signs", plainKey], () => {
         return { state: "PENDING" };
       });
       break;
@@ -207,7 +208,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
     case ETH_PLAIN_SIGN_PROCESSED:
       chainId = state.currentChain.id;
       const successKey = `${action.key}_${action.userAddress}`;
-      state = modifyNode(state, ["chainState", chainId, "signs", successKey], () => {
+      newState = modifyNode(state, ["chainState", chainId, "signs", successKey], () => {
         return {
           state: "SIGNED",
           signature: action.signature,
@@ -220,20 +221,19 @@ const EthereumReducer = (state = INIT_STATE, action) => {
     case ETH_PLAIN_SIGN_FAILED:
       chainId = state.currentChain.id;
       const failedKey = `${action.key}_${action.userAddress}`;
-      state = modifyNode(state, ["chainState", chainId, "signs", failedKey], (x) => {
+      newState = modifyNode(state, ["chainState", chainId, "signs", failedKey], (x) => {
         return { ...x, state: "ERROR", error: action.payload };
       });
       break;
 
     case SET_USER_CURRENT_CHAIN:
-      state = { ...state, currentChain: { name: action.name, id: action.id, rpc: action.rpc } };
+      newState = { ...state, currentChain: { name: action.name, id: action.id, rpc: action.rpc } };
       break;
 
     default:
-      state = { ...state };
-      break;
+      return state;
   }
-  return state;
+  return newState;
 };
 
 export default EthereumReducer;
