@@ -231,7 +231,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
       break;
 
     default:
-      return state;
+      break;
   }
   return newState;
 };
