@@ -653,10 +653,11 @@ describe("Ethereum Reducer tests", () => {
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
   });
 
-  it("State should't change in default case", () => {
+  it("State should not change in default case", () => {
     const initialState = state;
     const action = { type: "ETH_RANDOM_ACTION" };
     const newState = EthereumReducer(initialState, action);
-    expect(newState).toEqual(initialState);
+    expect(newState).toBe(initialState);
+    expect(newState).toStrictEqual(initialState);
   });
 });
