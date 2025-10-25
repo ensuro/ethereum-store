@@ -1,5 +1,4 @@
-// jest-dom adds custom jest matchers for asserting on DOM nodes.
-// allows you to do things like:
-// expect(element).toHaveTextContent(/react/i)
-// learn more: https://github.com/testing-library/jest-dom
-import "@testing-library/jest-dom";
+process.env.VITE_API_RETRY_TIMEOUT = "10";
+process.env.VITE_API_RETRY_COUNT = "10";
+process.env.VITE_API_ETH_TRANSACT_COUNT = "300";
+process.env.VITE_API_DEFAULT_MAX_AGE = "60000";

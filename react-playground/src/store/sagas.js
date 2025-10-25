@@ -1,14 +1,14 @@
 import { all, fork } from "redux-saga/effects";
-import { ethereumSaga, initializeEthereumStore } from "../package-index";
-
 import {
+  ethereumSaga,
+  initializeEthereumStore,
   getEncodedCall,
   getContract,
   getAbiName,
   getFormatter,
   getSignerContract,
   getTxReceiptStatus,
-} from "../helpers/contractRegistry";
+} from "@ensuro/ethereum-store";
 
 initializeEthereumStore({
   getEncodedCall,

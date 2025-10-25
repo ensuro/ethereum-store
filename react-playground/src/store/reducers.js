@@ -1,6 +1,6 @@
 import { combineReducers } from "redux";
 
-import EthereumReducer from "./ethereum/reducer";
+import { EthereumReducer } from "@ensuro/ethereum-store";
 
 // Hack to restore to the empty state dispatching action "RESET_ALL"
 // only for tests

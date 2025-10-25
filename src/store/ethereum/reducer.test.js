@@ -1,8 +1,8 @@
 import EthereumReducer from "./reducer.js";
-import { initializeEthereumStore } from "../../package-index";
-import * as contractRegistry from "../../helpers/contractRegistry";
+import { initializeEthereumStore } from "../../package-index.js";
+import * as contractRegistry from "../../helpers/contractRegistry.js";
 
-const { ethers } = require("ethers");
+import { TypedDataEncoder, getAddress } from "ethers";
 
 const currencyAddress = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"; // Sepolia USDC address
 contractRegistry.registerABI("ERC20Permit", require("@openzeppelin/contracts/build/contracts/ERC20Permit.json").abi);
@@ -496,8 +496,8 @@ describe("Ethereum Reducer tests", () => {
       ],
     };
     const value = {
-      owner: ethers.getAddress(userAddr),
-      spender: ethers.getAddress(spenderAddr),
+      owner: getAddress(userAddr),
+      spender: getAddress(spenderAddr),
       value: 100e6,
       nonce: 10,
       deadline: deadline,
@@ -505,7 +505,7 @@ describe("Ethereum Reducer tests", () => {
     const usdcDomain = { name: "USDC", version: "1", chainId: 11155111, verifyingContract: currencyAddress };
     const action = { type: "ETH_EIP_712_SIGN", domain: usdcDomain, types: types, value: value };
 
-    const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
+    const key = TypedDataEncoder.encode(usdcDomain, types, value);
     const expectedState = { ...state, chainState: { 11155111: { eipSigns: { [key]: { state: "PENDING" } } } } };
     expect(EthereumReducer(initialState, action)).toEqual(expectedState);
   });
@@ -524,19 +524,19 @@ describe("Ethereum Reducer tests", () => {
       ],
     };
     const value = {
-      owner: ethers.getAddress(userAddr),
-      spender: ethers.getAddress(spenderAddr),
+      owner: getAddress(userAddr),
+      spender: getAddress(spenderAddr),
       value: 100e6,
       nonce: 10,
       deadline: deadline,
     };
     const usdcDomain = { name: "USDC", version: "1", chainId: 11155111, verifyingContract: currencyAddress };
-    const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
+    const key = TypedDataEncoder.encode(usdcDomain, types, value);
     const initialState = { ...state, chainState: { 11155111: { eipSigns: { [key]: { state: "PENDING" } } } } };
     const action = {
       type: "ETH_EIP_712_SIGN_PROCESSED",
       key: key,
-      userAddress: ethers.getAddress(userAddr),
+      userAddress: getAddress(userAddr),
       signature: "0xabcd12345",
       domain: usdcDomain,
       types: types,
@@ -552,7 +552,7 @@ describe("Ethereum Reducer tests", () => {
               signature: "0xabcd12345",
               types: types,
               domain: usdcDomain,
-              userAddress: ethers.getAddress(userAddr),
+              userAddress: getAddress(userAddr),
               value: value,
             },
           },
@@ -576,19 +576,19 @@ describe("Ethereum Reducer tests", () => {
       ],
     };
     const value = {
-      owner: ethers.getAddress(userAddr),
-      spender: ethers.getAddress(spenderAddr),
+      owner: getAddress(userAddr),
+      spender: getAddress(spenderAddr),
       value: 100e6,
       nonce: 10,
       deadline: deadline,
     };
     const usdcDomain = { name: "USDC", version: "1", chainId: 11155111, verifyingContract: currencyAddress };
-    const key = ethers.TypedDataEncoder.encode(usdcDomain, types, value);
+    const key = TypedDataEncoder.encode(usdcDomain, types, value);
     const initialState = { ...state, chainState: { 11155111: { eipSigns: { [key]: { state: "PENDING" } } } } };
     const action = {
       type: "ETH_EIP_712_SIGN_FAILED",
       key: key,
-      userAddress: ethers.getAddress(userAddr),
+      userAddress: getAddress(userAddr),
       payload: "error processing the sign",
     };
     const expectedState = {
@@ -599,7 +599,7 @@ describe("Ethereum Reducer tests", () => {
             [key]: {
               state: "ERROR",
               error: "error processing the sign",
-              userAddress: ethers.getAddress(userAddr),
+              userAddress: getAddress(userAddr),
             },
           },
         },

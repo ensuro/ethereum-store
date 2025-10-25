@@ -4,9 +4,8 @@ import { map } from "lodash";
 import { Container } from "reactstrap";
 import { Button } from "react-bootstrap";
 import { connect, useDispatch } from "react-redux";
-import { selectCurrentChain, selectEthCallMultiple } from "../../store/ethereum/selectors";
+import { selectCurrentChain, selectEthCallMultiple, addRemoveEthSub } from "@ensuro/ethereum-store";
 import SubsManager from "./subsManager";
-import { addRemoveEthSub } from "../../utils/helpers/store_helper";
 
 const componentEthCalls = function () {
   // USDC Address

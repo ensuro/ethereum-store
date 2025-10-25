@@ -1,7 +1,7 @@
 import _ from "lodash";
-import { ethereum, gas } from "../../config";
+import config from "../../config.js";
 import { call, put, takeEvery, delay, select, all } from "redux-saga/effects";
-
+const { ethereum, gas } = config;
 // Ethereum Redux States
 import {
   ETH_CALL,
@@ -22,8 +22,8 @@ import {
   ETH_PLAIN_SIGN_FAILED,
   ETH_SUBSCRIPTION_INCREASE_CLOCK,
   ETH_INCREASE_CLOCK,
-} from "./actionTypes";
-import { selectEthCallTimestampByKey } from "./selectors";
+} from "./actionTypes.js";
+import { selectEthCallTimestampByKey } from "./selectors.js";
 import {
   getEncodedCallFn,
   getContractFn,
@@ -34,19 +34,19 @@ import {
   selectChainIdFn,
   selectProviderFn,
   selectUserAddressFn,
-} from "../../package-index";
+} from "../../package-index.js";
 
-const { ethers } = require("ethers");
+import { BrowserProvider, toBigInt, getAddress, TypedDataEncoder } from "ethers";
 
 async function signMessageTyped(userState, domain, types, value) {
-  const provider = new ethers.BrowserProvider(selectProviderFn(userState), "any");
+  const provider = new BrowserProvider(selectProviderFn(userState), "any");
   const signer = await provider.getSigner();
   const signatureHash = await signer.signTypedData(domain, types, value);
   return signatureHash;
 }
 
 async function signMessage(userState, address, message) {
-  const provider = new ethers.BrowserProvider(selectProviderFn(userState), "any");
+  const provider = new BrowserProvider(selectProviderFn(userState), "any");
   const signer = await provider.getSigner();
   const signatureHash = await signer.signMessage(message);
   return signatureHash;
@@ -73,14 +73,14 @@ async function ethCall(address, abi, method, args) {
 }
 
 async function ethSignerCall(address, abi, method, args, userState) {
-  let provider = new ethers.BrowserProvider(selectProviderFn(userState), "any");
+  let provider = new BrowserProvider(selectProviderFn(userState), "any");
   let contract = await getSignerContractFn(address, abi, provider);
   const estimatedGas = await contract[method].estimateGas(...args).then((gas) => {
     return gas;
   });
 
   args = args || [];
-  const gasLimit = (estimatedGas * ethers.toBigInt(gas.increase)) / 100n;
+  const gasLimit = (estimatedGas * toBigInt(gas.increase)) / 100n;
   return await contract[method](...args, { gasLimit: gasLimit });
 }
 
@@ -133,7 +133,7 @@ export function* makeEthTransact({ address, abi, method, args }) {
 export function* listenTransact({ id, txHash, retry }) {
   let response;
   const userState = yield select((state) => state.UserReducer);
-  let provider = new ethers.BrowserProvider(selectProviderFn(userState), "any");
+  let provider = new BrowserProvider(selectProviderFn(userState), "any");
   try {
     yield delay(ethereum.retry.timeout * 10);
     if (!retry || retry < ethereum.retry.transactCount) {
@@ -191,7 +191,7 @@ export function* makeEthEipSign({ domain, types, value }) {
     const signatureHash = yield call(signMessageTyped, userState, domain, types, value);
     yield put({
       type: ETH_EIP_712_SIGN_PROCESSED,
-      key: ethers.TypedDataEncoder.encode(domain, types, value),
+      key: TypedDataEncoder.encode(domain, types, value),
       userAddress: addr,
       signature: signatureHash,
       domain: domain,
@@ -201,7 +201,7 @@ export function* makeEthEipSign({ domain, types, value }) {
   } catch (error) {
     yield put({
       type: ETH_EIP_712_SIGN_FAILED,
-      key: ethers.TypedDataEncoder.encode(domain, types, value),
+      key: TypedDataEncoder.encode(domain, types, value),
       userAddress: addr,
       payload: error.message,
     });
@@ -210,7 +210,7 @@ export function* makeEthEipSign({ domain, types, value }) {
 
 export function* makeSign({ key, userAddress, message }) {
   const userState = yield select((state) => state.UserReducer);
-  const addr = ethers.getAddress(userAddress);
+  const addr = getAddress(userAddress);
   try {
     const sign = yield call(signMessage, userState, addr, message);
     yield put({ type: ETH_PLAIN_SIGN_PROCESSED, key: key, userAddress: addr, signature: sign, message: message });
