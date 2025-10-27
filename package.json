@@ -46,7 +46,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ensuro/ethereum-store.git"
+    "url": "https://github.com/ensuro/ethereum-store.git"
   },
   "keywords": [
     "ethereum",
