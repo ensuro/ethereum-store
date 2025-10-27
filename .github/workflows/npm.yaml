@@ -19,6 +19,10 @@ on:
           - latest
           - beta
 
+permissions:
+  id-token: write # Required for OIDC
+  contents: read
+
 jobs:
   npm-upload:
     name: NPM Package Build and Upload
