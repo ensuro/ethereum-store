@@ -1,6 +1,6 @@
 import { getABI } from "./contractRegistry";
 
-const sinon = require("sinon");
+import sinon from "sinon";
 
 export const buildFakeContractResolves = (fields, prefix, returnValues = {}) => {
   const fakeContract = {};
@@ -62,10 +62,17 @@ export const mockProviderRejectsFn = () => {
 
   ret._defaultProvider = {
     getSigner: sinon.fake.resolves({
-      signMessage: sinon.fake.rejects("Error signing message"),
-      signTypedData: sinon.fake.rejects("Error signing typed message"),
+      // 👇 rechazá en microtask para que el reducer pinte "PENDING" primero
+      signMessage: async () => {
+        await Promise.resolve((r) => setTimeout(r, 0)); // micro-tick
+        throw "Error signing message";
+      },
+      signTypedData: async () => {
+        await Promise.resolve((r) => setTimeout(r, 0)); // micro-tick
+        throw "Error signing typed message";
+      },
     }),
-  }; // Default provider
+  };
   ret.default = (provider) => {
     ret._defaultProvider = provider;
   };

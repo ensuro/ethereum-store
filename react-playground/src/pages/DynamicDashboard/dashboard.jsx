@@ -3,7 +3,7 @@ import { Container } from "reactstrap";
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { useDispatch } from "react-redux";
 import { connect } from "react-redux";
-import { selectCurrentChain, selectEthCall } from "../../store/ethereum/selectors";
+import { selectCurrentChain, selectEthCall } from "@ensuro/ethereum-store";
 
 const DynamicDashboard = ({ state, subscriptions }) => {
   let dispatch = useDispatch();

@@ -1,5 +1,5 @@
 /* This file is used only for testing purposes. */
-const { ethers } = require("ethers");
+import * as ethers from "ethers";
 
 const roProvider = new ethers.JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com");
 

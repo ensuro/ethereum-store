@@ -19,6 +19,10 @@ on:
           - latest
           - beta
 
+permissions:
+  id-token: write # Required for OIDC
+  contents: read
+
 jobs:
   npm-upload:
     name: NPM Package Build and Upload
@@ -27,12 +31,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
 
       - id: semver
         run: |
@@ -43,21 +47,21 @@ jobs:
           fi
           echo "::set-output name=semver::${SEMVER}"
 
+      # Ensure npm 11.5.1 or later is installed
+      - name: Update npm
+        run: npm install -g npm@latest
       - run: npm ci
       - run: npm version --no-git-tag-version "${{ steps.semver.outputs.semver }}"
-      - run: npm run build:lib # create the ./lib directory with the files to publish
+      - run: npm run build
 
-      - run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_AUTOMATION_TOKEN }}" > ./lib/.npmrc
-
-      - run: |
+      - name: Publish
+        run: |
           RELEASE_TAG="${{ github.event.inputs.tag }}"
           if [ -z "$RELEASE_TAG" ]; then
-            if grep -q -- '-beta' <<< "${{ steps.semver.outputs.semver }}"; then
+            if echo "${{ steps.semver.outputs.semver }}" | grep -q -- '-beta'; then
               RELEASE_TAG=beta
             else
-              # No manual input, we must be running on a tag
               RELEASE_TAG=latest
             fi
           fi
           npm publish --tag "$RELEASE_TAG" --access public
-        working-directory: ./lib

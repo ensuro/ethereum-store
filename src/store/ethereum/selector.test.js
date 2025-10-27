@@ -1,44 +1,67 @@
 import _ from "lodash";
 import Big from "big.js";
-import store from "../index.js";
 import assert from "assert";
-import * as contractRegistry from "../../helpers/contractRegistry";
-import { selectEthCallMultiple, getCallKey } from "./selectors";
+import { configureStore } from "@reduxjs/toolkit";
 
-const sinon = require("sinon");
+import reducer from "./reducer.js";
+import { initializeEthereumStore } from "../../package-index.js";
+import * as contractRegistry from "../../helpers/contractRegistry.js";
+import { selectEthCallMultiple, getCallKey } from "./selectors.js";
 
-const currencyAddress = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"; // Sepolia USDC address
+import erc20PermitJson from "@openzeppelin/contracts/build/contracts/ERC20Permit.json";
 
-const BNToDecimal = (number, decimals) => {
-  return Big(number).div(10 ** decimals);
-};
+const currencyAddress = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"; // Sepolia USDC
 
-contractRegistry.registerABI("ERC20Permit", require("@openzeppelin/contracts/build/contracts/ERC20Permit.json").abi);
-contractRegistry.registerContract(currencyAddress, "ERC20Permit");
-contractRegistry.registerFormatter("ERC20Permit", "totalSupply", _.partial(BNToDecimal, _, 6));
-contractRegistry.registerFormatter("ERC20Permit", "balanceOf", _.partial(BNToDecimal, _, 6));
+const BNToDecimal = (number, decimals) => Big(number).div(10 ** decimals);
 
-afterEach(() => {
-  store.dispatch({ type: "RESET_ALL" });
-  sinon.restore();
+let store;
+
+function makeStore() {
+  return configureStore({
+    reducer: { EthereumReducer: reducer },
+    middleware: (getDefault) =>
+      getDefault({
+        thunk: false,
+        serializableCheck: false,
+        immutableCheck: false,
+      }),
+    devTools: false,
+  });
+}
+
+beforeAll(() => {
+  contractRegistry.registerABI("ERC20Permit", erc20PermitJson.abi);
+  contractRegistry.registerFormatter("ERC20Permit", "totalSupply", _.partial(BNToDecimal, _, 6));
+  contractRegistry.registerFormatter("ERC20Permit", "balanceOf", _.partial(BNToDecimal, _, 6));
+  contractRegistry.registerContract(currencyAddress, "ERC20Permit");
+  initializeEthereumStore({
+    getEncodedCall: contractRegistry.getEncodedCall,
+  });
+});
+
+beforeEach(() => {
+  store = makeStore();
 });
 
 describe("selectEthCallMultiple", () => {
   test("should return call_key", () => {
-    const state = {
-      currentChain: { id: 1234, rpc: "https://foo-rpc.com/" },
-    };
-
     const expectedEncodedCall = "0x18160ddd";
-    sinon.stub(contractRegistry, "getEncodedCall").returns(expectedEncodedCall);
+    initializeEthereumStore({
+      getEncodedCall: () => expectedEncodedCall,
+    });
 
-    const callKey = getCallKey(state, currencyAddress, "ERC20Permit", "totalSupply", ...[]);
+    const state = { currentChain: { id: 1234, rpc: "https://foo-rpc.com/" } };
+    const callKey = getCallKey(state, currencyAddress, "ERC20Permit", "totalSupply");
 
     expect(callKey).toEqual(`${currencyAddress}_${expectedEncodedCall}`);
+
+    initializeEthereumStore({
+      getEncodedCall: contractRegistry.getEncodedCall,
+    });
   });
 
   test("should return EMPTYSTATE when no calls are present", async () => {
-    await store.dispatch({ type: "SET_USER_CURRENT_CHAIN", name: "NewChain", id: 1234, rpc: "https://foo-rpc.com/" });
+    store.dispatch({ type: "SET_USER_CURRENT_CHAIN", name: "NewChain", id: 1234, rpc: "https://foo-rpc.com/" });
     const result = selectEthCallMultiple(store.getState().EthereumReducer, []);
     expect(result).toEqual([]);
   });
@@ -48,9 +71,9 @@ describe("selectEthCallMultiple", () => {
       { currentChain: { id: 1234, rpc: "https://foo-rpc.com/" } },
       currencyAddress,
       "ERC20Permit",
-      "totalSupply",
-      ...[]
+      "totalSupply"
     );
+
     store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" });
 
     let result = selectEthCallMultiple(store.getState().EthereumReducer, [
@@ -58,12 +81,14 @@ describe("selectEthCallMultiple", () => {
     ]);
     expect(result).toEqual([{ state: "LOADING" }]);
 
-    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key: call_key, value: 1000, timestamp: new Date().getTime() });
+    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key, value: 1000, timestamp: Date.now() });
+
     result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
     ]);
     expect(result).toEqual([{ state: "LOADED", value: 1000 }]);
-    let result2 = selectEthCallMultiple(store.getState().EthereumReducer, [
+
+    const result2 = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
     ]);
     assert.strictEqual(result[0], result2[0]);
@@ -74,8 +99,7 @@ describe("selectEthCallMultiple", () => {
       { currentChain: { id: 1234, rpc: "https://foo-rpc.com/" } },
       currencyAddress,
       "ERC20Permit",
-      "totalSupply",
-      ...[]
+      "totalSupply"
     );
 
     const balanceOfCallKey = getCallKey(
@@ -87,7 +111,6 @@ describe("selectEthCallMultiple", () => {
     );
 
     store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" });
-
     store.dispatch({
       type: "ETH_CALL",
       address: currencyAddress,
@@ -95,6 +118,7 @@ describe("selectEthCallMultiple", () => {
       method: "balanceOf",
       args: ["0x4d68Cf31d613070b18E406AFd6A42719a62a0785"],
     });
+
     let result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
       {
@@ -106,12 +130,7 @@ describe("selectEthCallMultiple", () => {
     ]);
     expect(result).toEqual([{ state: "LOADING" }, { state: "LOADING" }]);
 
-    store.dispatch({
-      type: "ETH_CALL_SUCCESS",
-      call_key: totalSupplyCallKey,
-      value: 1000,
-      timestamp: new Date().getTime(),
-    });
+    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key: totalSupplyCallKey, value: 1000, timestamp: Date.now() });
 
     result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
@@ -122,15 +141,9 @@ describe("selectEthCallMultiple", () => {
         args: ["0x4d68Cf31d613070b18E406AFd6A42719a62a0785"],
       },
     ]);
-
     expect(result).toEqual([{ state: "LOADED", value: 1000 }, { state: "LOADING" }]);
 
-    store.dispatch({
-      type: "ETH_CALL_SUCCESS",
-      call_key: balanceOfCallKey,
-      value: 500,
-      timestamp: new Date().getTime(),
-    });
+    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key: balanceOfCallKey, value: 500, timestamp: Date.now() });
 
     result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
@@ -141,7 +154,6 @@ describe("selectEthCallMultiple", () => {
         args: ["0x4d68Cf31d613070b18E406AFd6A42719a62a0785"],
       },
     ]);
-
     expect(result).toEqual([
       { state: "LOADED", value: 1000 },
       { state: "LOADED", value: 500 },
@@ -153,28 +165,23 @@ describe("selectEthCallMultiple", () => {
       { currentChain: { id: 1234, rpc: "https://foo-rpc.com/" } },
       currencyAddress,
       "ERC20Permit",
-      "totalSupply",
-      ...[]
+      "totalSupply"
     );
 
     store.dispatch({ type: "ETH_CALL", address: currencyAddress, abi: "ERC20Permit", method: "totalSupply" });
-
-    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key: call_key, value: 1000, timestamp: new Date().getTime() });
+    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key, value: 1000, timestamp: Date.now() });
 
     let result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
     ]);
-
     expect(result).toEqual([{ state: "LOADED", value: 1000 }]);
 
-    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key: call_key, value: 2000, timestamp: new Date().getTime() });
+    store.dispatch({ type: "ETH_CALL_SUCCESS", call_key, value: 2000, timestamp: Date.now() });
 
     result = selectEthCallMultiple(store.getState().EthereumReducer, [
       { address: currencyAddress, abi: "ERC20Permit", method: "totalSupply", args: [] },
     ]);
-
     expect(result).toEqual([{ state: "LOADED", value: 2000 }]);
-
     expect(result[0].value).not.toBe(1000);
   });
 });

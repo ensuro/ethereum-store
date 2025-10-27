@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { connect, useDispatch } from "react-redux";
-import { selectCurrentChain, selectEthCallMultiple } from "../../store/ethereum/selectors";
-import { addRemoveEthSub } from "../../utils/helpers/store_helper";
+import { selectCurrentChain, selectEthCallMultiple, addRemoveEthSub } from "@ensuro/ethereum-store";
 
 const componentEthCalls = function () {
   // USDC Address
