@@ -45,11 +45,14 @@ jobs:
             # No manual input, we must be running on a tag
             SEMVER="${GITHUB_REF/refs\/tags\/v/}"
           fi
-          echo "semver=${SEMVER}" >> $GITHUB_OUTPUT
+          echo "::set-output name=semver::${SEMVER}"
 
       # Ensure npm 11.5.1 or later is installed
       - name: Update npm
-        run: npx -p npm@latest npm install -g npm@latest
+        run: |
+          npm --version
+          npm install -g npm@10.9.8
+          npm install -g npm@latest
       - run: npm ci
       - run: npm version --no-git-tag-version "${{ steps.semver.outputs.semver }}"
       - run: npm run build
