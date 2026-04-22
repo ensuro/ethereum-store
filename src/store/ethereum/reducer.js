@@ -194,6 +194,14 @@ const EthereumReducer = (state = INIT_STATE, action) => {
 
     case ETH_EIP_712_SIGN_PROCESSED: {
       chainId = state.currentChain.id;
+      const sanitizeValue = (obj) => {
+        if (typeof obj === "bigint") return obj.toString();
+        if (obj !== null && typeof obj === "object") {
+          return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, sanitizeValue(v)]));
+        }
+        return obj;
+      };
+      const cleanValue = sanitizeValue(action.value);
       newState = modifyNode(state, ["chainState", chainId, "eipSigns", action.key], () => {
         return {
           state: "SIGNED",
@@ -201,7 +209,7 @@ const EthereumReducer = (state = INIT_STATE, action) => {
           signature: action.signature,
           domain: action.domain,
           types: action.types,
-          value: action.value,
+          value: cleanValue,
         };
       });
       break;
