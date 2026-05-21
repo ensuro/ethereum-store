@@ -31,12 +31,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version-file: ".nvmrc"
           registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
 
       - id: semver
         run: |
@@ -45,17 +47,16 @@ jobs:
             # No manual input, we must be running on a tag
             SEMVER="${GITHUB_REF/refs\/tags\/v/}"
           fi
-          echo "::set-output name=semver::${SEMVER}"
+          echo "semver=${SEMVER}" >> $GITHUB_OUTPUT
 
-      # Ensure npm 11.5.1 or later is installed
-      - name: Update npm
-        run: |
-          npm --version
-          npm install -g npm@10.9.8
-          npm install -g npm@latest
-      - run: npm ci
-      - run: npm version --no-git-tag-version "${{ steps.semver.outputs.semver }}"
-      - run: npm run build
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set Version
+        run: npm version --no-git-tag-version "${{ steps.semver.outputs.semver }}"
+
+      - name: Build
+        run: npm run build
 
       - name: Publish
         run: |
