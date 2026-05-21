@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: ".nvmrc" # File containing the Node version to use on this repo & workflow.
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
