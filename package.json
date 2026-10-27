@@ -59,5 +59,8 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/ensuro/ethereum-store/issues"
+  },
+  "engines": {
+    "node": "^24.22.1"
   }
 }
