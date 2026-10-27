@@ -20,7 +20,7 @@ export const buildFakeContractRejects = (fields) => {
 };
 
 export const mockContractFn = () => {
-  const ret = function (address, abi, _) {
+  const ret = function (address, abi) {
     let installedContract = ret._installedContracts[address];
     if (installedContract !== undefined) return installedContract;
     installedContract = ret._defaultContracts[abi];

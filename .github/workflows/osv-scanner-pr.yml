@@ -1,0 +1,58 @@
+name: OSV-Scanner PR Scan
+
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+    branches: [main]
+
+permissions:
+  # Required to upload SARIF results to GitHub Code Scanning.
+  actions: read
+  # Only read repository contents.
+  contents: read
+  # Required to post or update the sticky scan comment on the PR.
+  pull-requests: write
+  # Required by the reusable workflow for security scan results.
+  security-events: write
+
+jobs:
+  scan-pr:
+    # Full scan of the committed package-lock.json, including existing findings.
+    # The workflow fails when a vulnerability is not listed as ignored.
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.5.0
+    with:
+      upload-sarif: false
+      # Scan the committed lockfile without resolving new dependency versions.
+      scan-args: |-
+        --recursive
+        --no-resolve
+        ./
+
+  scan-comment:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install osv-scanner
+        run: |
+          # Use the same pinned scanner version as the reusable workflow.
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -sL -o "$RUNNER_TEMP/bin/osv-scanner" \
+            https://github.com/google/osv-scanner/releases/download/v2.5.0/osv-scanner_linux_amd64
+          chmod +x "$RUNNER_TEMP/bin/osv-scanner"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Scan dependencies
+        # Findings are captured for the PR comment even when the scan exits with code 1.
+        run: osv-scanner scan source --format=markdown --recursive --no-resolve ./ > osv-results.md || true
+      - name: Prepare comment
+        run: |
+          {
+            echo "### OSV-Scanner results (${{ github.event.pull_request.head.sha }})"
+            echo
+            cat osv-results.md
+          } > comment.md
+      - name: Post sticky comment
+        uses: marocchino/sticky-pull-request-comment@v3.0.5
+        with:
+          path: comment.md

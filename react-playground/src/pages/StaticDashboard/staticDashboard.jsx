@@ -12,7 +12,7 @@ const componentEthCalls = function () {
   return [{ address: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", abi: "ERC20", method: "totalSupply", args: [] }];
 };
 
-const Static = ({ totalSupply, subscriptions, currentChain }) => {
+const Static = ({ totalSupply, subscriptions }) => {
   let dispatch = useDispatch();
   const [sub, setSub] = useState(false);
 
