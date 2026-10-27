@@ -10,7 +10,7 @@ This directory is a **playground** to develop, test, and document usage examples
 
 ## Requirements
 
-- Node ≥ 18
+- Node ≥ 24.22.1
 - npm
 
 ## Scripts
