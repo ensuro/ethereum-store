@@ -1,15 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Container } from "reactstrap";
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { useDispatch } from "react-redux";
 import { connect } from "react-redux";
 import { selectCurrentChain, selectEthCall } from "@ensuro/ethereum-store";
 
-const DynamicDashboard = ({ state, subscriptions }) => {
+const DynamicDashboard = ({ state }) => {
   let dispatch = useDispatch();
   const [contractAddress, setContractAddress] = useState("");
   const [method, setMethod] = useState("");
-  const [result, setResult] = useState("");
   const [clicked, setClicked] = useState(false);
 
   const dispatchCall = () => {
@@ -18,15 +17,8 @@ const DynamicDashboard = ({ state, subscriptions }) => {
     setClicked(true);
   };
 
-  useEffect(() => {
-    if (contractAddress && method && clicked) {
-      const res = selectEthCall(state, contractAddress, "ERC20", method);
-      if (res) {
-        setResult(res);
-        setClicked(false);
-      }
-    }
-  }, [clicked, contractAddress, method, state]);
+  const result =
+    contractAddress && method && clicked ? selectEthCall(state, contractAddress, "ERC20", method) : undefined;
 
   return (
     <React.Fragment>

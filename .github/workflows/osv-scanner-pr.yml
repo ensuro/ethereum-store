@@ -1,0 +1,47 @@
+name: OSV-Scanner PR Scan
+
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+    branches: [main]
+
+permissions:
+  # Only need to read contents
+  contents: read
+  # Required to post/update the sticky results comment on the PR
+  pull-requests: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install osv-scanner
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -sL -o "$RUNNER_TEMP/bin/osv-scanner" \
+            https://github.com/google/osv-scanner/releases/download/v2.5.0/osv-scanner_linux_amd64
+          chmod +x "$RUNNER_TEMP/bin/osv-scanner"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Scan dependencies
+        id: scan
+        continue-on-error: true
+        # Full scan (not PR-delta): fails on ANY known vulnerability, including pre-existing ones.
+        run: osv-scanner scan source --format=markdown --recursive --no-resolve --verbosity=error ./ > osv-results.md
+      - name: Prepare comment
+        if: always()
+        run: |
+          {
+            echo "### OSV-Scanner results (${{ github.event.pull_request.head.sha || github.sha }})"
+            echo
+            cat osv-results.md
+          } > comment.md
+      - name: Post sticky comment
+        if: always() && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v3.0.5
+        with:
+          path: comment.md
+      - name: Fail if the scan found issues
+        if: steps.scan.outcome != 'success'
+        run: exit 1

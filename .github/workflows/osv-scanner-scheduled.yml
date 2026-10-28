@@ -1,0 +1,26 @@
+name: OSV-Scanner Scheduled Scan
+
+on:
+  schedule:
+    - cron: "30 12 * * 1"
+  push:
+    branches: [main]
+
+permissions:
+  # Required to upload SARIF results to GitHub Code Scanning.
+  actions: read
+  security-events: write
+  # Only read repository contents.
+  contents: read
+
+jobs:
+  scan-scheduled:
+    # Full scan on every push to main and during the weekly scheduled run.
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.5.0
+    with:
+      upload-sarif: false
+      # Scan the committed lockfile without resolving new dependency versions.
+      scan-args: |-
+        --recursive
+        --no-resolve
+        ./
