@@ -1,0 +1,3 @@
+# OSV-Scanner configuration.
+# Keep exceptions narrow, time-bounded, and tied to a dependency upgrade plan.
+# No exceptions are currently needed: all known vulnerabilities are resolved.

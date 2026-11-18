@@ -7,7 +7,7 @@ const componentEthCalls = function () {
   return [{ address: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", abi: "ERC20", method: "symbol", args: [] }];
 };
 
-const SubsManager = ({ symbol, currentChain }) => {
+const SubsManager = ({ symbol }) => {
   let dispatch = useDispatch();
 
   useEffect(() => {
